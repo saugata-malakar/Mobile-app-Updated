@@ -25,9 +25,14 @@ export default function DoctorLogin() {
         err.response?.data?.error?.message ||
         err.message ||
         'Login failed. Check credentials and API server.';
-      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      if (
+        err.code === 'ERR_NETWORK' ||
+        err.message === 'Network Error' ||
+        err.response?.status === 502 ||
+        err.response?.status === 503
+      ) {
         msg =
-          'Cannot reach the API on port 8000. Start the backend: cd backend/legacy && source venv/bin/activate && export PORT=8000 DATABASE_URL=sqlite:///instance/healthscreen_dev.db PYTHONPATH=. && python app.py';
+          'API not reachable on port 8000 (502). Start the backend first — see doctor-dashboard/README.md — then try again.';
       }
       setError(msg);
     } finally {
