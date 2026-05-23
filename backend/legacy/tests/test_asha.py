@@ -76,6 +76,59 @@ def test_asha_screenings_list(client, app, sample_asha, sample_patient):
     assert res.status_code == 200
 
 
+def test_asha_patients_sync_create(client, app):
+    res = client.post(
+        "/api/v1/asha/patients",
+        data=json.dumps(
+            {
+                "name": "Sync Test",
+                "phone": "9876501234",
+                "age": 45,
+                "location": "Test Village",
+                "gender": "Male",
+            }
+        ),
+        headers={"Content-Type": "application/json"},
+    )
+    assert res.status_code == 201
+    body = res.get_json()
+    assert body["success"] is True
+    assert body["message"] == "Patient created"
+    assert body["data"]["patient_id"]
+    assert body["data"]["synced"] is True
+
+
+def test_asha_patients_sync_duplicate_phone_updates(client, app):
+    client.post(
+        "/api/v1/asha/patients",
+        data=json.dumps(
+            {
+                "name": "First",
+                "phone": "9876501235",
+                "age": 40,
+                "location": "V1",
+            }
+        ),
+        headers={"Content-Type": "application/json"},
+    )
+    res = client.post(
+        "/api/v1/asha/patients",
+        data=json.dumps(
+            {
+                "name": "Updated Name",
+                "phone": "9876501235",
+                "age": 41,
+                "location": "V2",
+            }
+        ),
+        headers={"Content-Type": "application/json"},
+    )
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["success"] is True
+    assert body["message"] == "Patient updated"
+
+
 def test_asha_commission_list(client, sample_asha):
     token = _asha_token(client)
     res = client.get(

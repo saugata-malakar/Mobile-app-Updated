@@ -1,19 +1,131 @@
+import uuid
 from datetime import datetime, timezone
 
 from flask import Blueprint, g, request
 from sqlalchemy import func, or_
 
 from middleware.auth_middleware import require_asha
-from models import AshaCommissionLedger, AshaPatientAssignment, AshaTrainingModule, Commission, Consultation, Patient, Screening, WoundSite, db
+from models import (
+    AshaCommissionLedger,
+    AshaPatientAssignment,
+    AshaTrainingModule,
+    AshaWorker,
+    Commission,
+    Consultation,
+    Patient,
+    Screening,
+    WoundSite,
+    db,
+)
 from utils.response_helper import error, paginated, success
 from utils.schedule_generator import seed_skin_and_contributing_schedules_if_needed, seed_wound_schedules_for_site
-from utils.validators import sanitise_string
+from utils.validators import sanitise_string, validate_age, validate_gender, validate_phone
 
 asha_bp = Blueprint("asha", __name__)
 
 
 def _month_start_utc(dt: datetime):
     return datetime(dt.year, dt.month, 1, tzinfo=timezone.utc)
+
+
+def _normalize_gender(raw) -> str:
+    gtxt = sanitise_string(str(raw or "Other"))
+    if not gtxt:
+        return "Other"
+    low = gtxt.lower()
+    if low in ("male", "m"):
+        return "Male"
+    if low in ("female", "f"):
+        return "Female"
+    if validate_gender(gtxt):
+        return gtxt
+    return "Other"
+
+
+@asha_bp.post("/patients")
+def sync_asha_patient():
+    """
+    Offline-first ASHA patient roster sync (no JWT).
+    Accepts mobile patientRemoteSync payload and spec fields: name, phone, age, location, created_by.
+    """
+    data = request.get_json(silent=True) or {}
+    name = sanitise_string(data.get("name") or data.get("full_name"))
+    phone = str(data.get("phone") or data.get("phone_number") or "").strip()
+    age_raw = data.get("age")
+    location = sanitise_string(
+        data.get("location") or data.get("village") or data.get("address") or ""
+    )
+    created_by = sanitise_string(
+        str(data.get("created_by") or data.get("created_by_asha_id") or "")
+    )
+
+    if not name:
+        return error("validation_error", "name is required", status=400)
+    if not validate_phone(phone):
+        return error("validation_error", "phone must be exactly 10 digits", status=400)
+    if not validate_age(age_raw):
+        return error("validation_error", "age must be between 1 and 120", status=400)
+
+    age = int(age_raw)
+    gender = _normalize_gender(data.get("gender"))
+    village = location or "Unknown"
+    asha_id = None
+    if created_by:
+        worker = AshaWorker.query.filter(
+            (AshaWorker.id == created_by) | (AshaWorker.worker_id == created_by.lower())
+        ).first()
+        if not worker:
+            return error("validation_error", "created_by ASHA worker not found", status=400)
+        asha_id = worker.id
+
+    existing = Patient.query.filter_by(phone=phone).first()
+    if existing:
+        existing.name = name
+        existing.age = age
+        existing.gender = gender
+        existing.village = village
+        if asha_id:
+            existing.created_by_asha_id = asha_id
+        db.session.add(existing)
+        patient = existing
+        message = "Patient updated"
+        status_code = 200
+    else:
+        patient = Patient(
+            id=str(uuid.uuid4()),
+            name=name,
+            phone=phone,
+            age=age,
+            gender=gender,
+            village=village,
+            created_by_asha_id=asha_id,
+            is_research_participant=True,
+        )
+        db.session.add(patient)
+        message = "Patient created"
+        status_code = 201
+
+    if asha_id:
+        assign = AshaPatientAssignment.query.filter_by(
+            asha_id=asha_id, patient_id=patient.id, is_active=True
+        ).first()
+        if assign is None:
+            db.session.add(
+                AshaPatientAssignment(
+                    asha_id=asha_id,
+                    patient_id=patient.id,
+                    assignment_type="PRIMARY",
+                    is_active=True,
+                    geographic_verified=False,
+                )
+            )
+
+    db.session.commit()
+    return success(
+        {"patient_id": patient.id, "synced": True},
+        status=status_code,
+        message=message,
+    )
 
 
 @asha_bp.get("/me/dashboard")

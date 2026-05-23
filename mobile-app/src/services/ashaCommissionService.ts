@@ -2,7 +2,7 @@ import {api} from './apiClient';
 import type {AshaCommissionsApiResponse} from '../types/asha';
 
 /**
- * GET /asha/commissions (Flask: typically mounted as /api/v1/asha/commissions).
+ * GET /asha/commissions (Flask: typically mounted as /api/v1/asha/me/commissions).
  * Query: from_date, to_date (ISO date strings).
  */
 export async function fetchAshaCommissions(
@@ -10,7 +10,7 @@ export async function fetchAshaCommissions(
   toDate?: string,
 ): Promise<AshaCommissionsApiResponse> {
   const res = await api.get<AshaCommissionsApiResponse | {data: AshaCommissionsApiResponse}>(
-    '/api/v1/asha/commissions',
+    '/api/v1/asha/me/commissions',
     {
       params: {
         ...(fromDate ? {from_date: fromDate} : {}),
