@@ -12,6 +12,7 @@ Project documentation for interns, reviewers, and integration with the mobile pr
 | `DPDP.md` | Saugata | Consent, retention, federated learning PoC |
 | `MODEL_CARD.md` | Per model | Metrics, limitations, bias notes (wound severity: Saugata) |
 | `ONBOARDING.md` | Prof. Das | Git workflow, PR template, code standards |
+| `INTELLECTUAL_PROPERTY.md` | Prof. Das | IP ownership, confidentiality, intern acknowledgment |
 
 ## Datasets (gitignored paths)
 
