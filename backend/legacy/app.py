@@ -77,6 +77,12 @@ def create_app():
         except Exception:
             db.session.rollback()
         try:
+            from migrations.upgrade_patients_phase_a import upgrade_patients_phase_a
+
+            upgrade_patients_phase_a()
+        except Exception:
+            db.session.rollback()
+        try:
             from migrations.upgrade_teleconsult_requests_c4 import upgrade
 
             upgrade()

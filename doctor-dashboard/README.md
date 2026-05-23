@@ -1,6 +1,6 @@
 # Doctor Dashboard
 
-Vite + React web dashboard for clinicians. Talks to the Flask API in `backend/legacy/`.
+Vite + React web dashboard for clinicians. Talks to the HealthScreeningApp Flask API.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ python app.py
 **Terminal B — Dashboard**
 
 ```bash
-cd doctor-dashboard
+cd /Users/dipak/HealthScreeningApp/doctor-dashboard
 npm install
 npm run dev
 ```
@@ -65,6 +65,26 @@ Open **http://localhost:5173/login**
 | GET | `/api/v1/doctors/department/dashboard` |
 
 Auth: **JWT Bearer** token in `Authorization` header (stored in `localStorage` as `doctor_dashboard_token`).
+
+## Seed demo inbox data
+
+Adds 3 patients and open alerts for `doctor@demo.in` (safe to re-run):
+
+```bash
+cd backend/legacy
+source venv/bin/activate
+export DATABASE_URL="sqlite:///$(pwd)/instance/healthscreen_dev.db"
+export PYTHONPATH=.
+python -c "
+from app import create_app
+from migrations.seed_dashboard_demo import ensure_dashboard_demo
+app = create_app()
+with app.app_context():
+    ensure_dashboard_demo()
+"
+```
+
+Refresh the dashboard after seeding.
 
 ## Smoke test (curl)
 
@@ -150,6 +170,6 @@ curl -s "$API/api/v1/doctors/me/patients" -H "Authorization: Bearer $TOKEN" | py
 
 ## Related
 
-- Backend routes: `../backend/legacy/routes/doctors.py`
-- Demo doctor seed: `../backend/legacy/migrations/seed_doctor_demo.py`
+- Backend routes: `../backend/routes/doctors.py`
+- Demo doctor seed: `../backend/migrations/seed_doctor_demo.py`
 - Monorepo: https://github.com/dkg-diabetescare-ai/diabetescare-ai
