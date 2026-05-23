@@ -72,7 +72,7 @@ export default function DoctorLogin() {
           </button>
         </form>
         <p className="mt-6 text-xs text-[#5A5A5A]">
-          Demo: doctor@demo.in / doctor123 (requires Flask API on port 5001)
+          Demo: doctor@demo.in / doctor123 (requires Flask API on port 8000)
         </p>
       </div>
     </div>
