@@ -1,97 +1,54 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-.venv/
+# Dependencies
+node_modules/
 venv/
 ENV/
 env/
+.venv
+
+# Build & dist
+dist/
+build/
+.expo/
+.next/
+out/
+
+# Cache
+__pycache__/
+*.pyc
 .pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.ruff_cache/
-*.cover
-.hypothesis/
+.egg-info/
 
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb_checkpoints
+# Environment
+.env
+.env.local
+.env.*.local
+secrets.json
+credentials.json
 
-# IDEs
-.idea/
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
-.DS_Store
-
-# Environment & secrets
-.env
-.env.*
-!.env.example
-*.pem
-secrets/
-credentials.json
-
-# Data & datasets (never commit raw data)
-data/*
-!data/README.md
-datasets/
-raw/
-external/
-*.csv
-*.tsv
-!tests/fixtures/**/*.csv
-
-# Model weights & checkpoints (never commit)
-models/*
-!models/README.md
-checkpoints/
-weights/
-*.pt
-*.pth
-*.onnx
-*.tflite
-*.h5
-*.pkl
-*.joblib
-runs/
-wandb/
-mlruns/
-lightning_logs/
-
-# Logs & temp
-logs/
-*.log
-tmp/
-temp/
-.cache/
-
-# Streamlit
-.streamlit/secrets.toml
-
-# Docker / deploy artifacts
-*.tar
-.terraform/
 
 # OS
+.DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Data
+data/
+datasets/
+*.zip
+*.tar.gz
+
+# Models (too large)
+models/
+*.pth
+*.h5
+*.onnx
