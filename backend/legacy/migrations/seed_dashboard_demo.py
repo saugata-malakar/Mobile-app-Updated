@@ -69,3 +69,7 @@ def ensure_dashboard_demo():
 
     db.session.commit()
     print(f"Dashboard demo ready for {email}: {created} new patient(s), assignments + alerts.")
+
+    from migrations.seed_dashboard_wound_sessions import ensure_dashboard_wound_sessions
+
+    ensure_dashboard_wound_sessions()

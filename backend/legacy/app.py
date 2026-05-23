@@ -83,6 +83,12 @@ def create_app():
         except Exception:
             db.session.rollback()
         try:
+            from migrations.upgrade_ai_result_details_json import upgrade as upgrade_ai_details_json
+
+            upgrade_ai_details_json()
+        except Exception:
+            db.session.rollback()
+        try:
             from migrations.upgrade_teleconsult_requests_c4 import upgrade
 
             upgrade()
