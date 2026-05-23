@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearAuth } from '../services/api';
 
 const NAV = [
@@ -7,7 +7,7 @@ const NAV = [
   { to: '/department', label: 'Department' },
 ];
 
-export default function Layout({ doctor }) {
+export default function Layout({ doctor, children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,7 +55,7 @@ export default function Layout({ doctor }) {
         </div>
       </header>
       <main className="flex-1 p-8">
-        <Outlet />
+        {children}
       </main>
       <footer className="text-center text-xs text-[#5A5A5A] py-3 border-t border-[#D4D9E0]">
         AI-assisted screening only. Not a medical diagnosis. · Desktop clinical workstation
