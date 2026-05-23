@@ -4,7 +4,7 @@ IIT Kharagpur research project for early detection of diabetic complications usi
 
 **Clinical focus:** diabetic foot wounds (DFU), periwound skin disease, and contributing factors (pallor, external eye triage).
 
-**Repository:** [github.com/diabetescare-ai/diabetescare-ai](https://github.com/diabetescare-ai/diabetescare-ai)
+**Repository:** [github.com/dkg-diabetescare-ai/diabetescare-ai](https://github.com/dkg-diabetescare-ai/diabetescare-ai)
 
 **Duration:** 6 weeks (Week 1 — setup & scaffolding)
 
@@ -46,7 +46,7 @@ diabetescare-ai/
 
 ```bash
 # Clone
-git clone https://github.com/diabetescare-ai/diabetescare-ai.git
+git clone https://github.com/dkg-diabetescare-ai/diabetescare-ai.git
 cd diabetescare-ai
 
 # Virtual environment

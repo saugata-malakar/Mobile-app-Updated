@@ -24,5 +24,5 @@ Project documentation for interns, reviewers, and integration with the mobile pr
 
 ## Links
 
-- GitHub: https://github.com/diabetescare-ai/diabetescare-ai
+- GitHub: https://github.com/dkg-diabetescare-ai/diabetescare-ai
 - Product spec: see mobile repo `CURSOR_MASTER_PROMPT.md`
