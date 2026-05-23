@@ -12,13 +12,14 @@ IIT Kharagpur research project for early detection of diabetic complications usi
 
 ## Team
 
+**5 interns** + Prof. Dipak Kumar Das (PI)
+
 | Intern | Focus | Folder |
 |--------|--------|--------|
 | Adreesh Mitra | Wound CV & segmentation | `cv/` |
 | Kousttav Paul | Skin AI & mobile integration | `ml/skin_classifier/` |
 | Shivraj Gulve | Eye models & deployment | `ml/eye_models/`, `backend/api/`, `deployment/` |
-| Saugata Malakar | Privacy, DB, RAG | `backend/database/` |
-| Sharif Hossain Sarkar | Wound severity AI | `ml/wound_severity/` |
+| Saugata Malakar | Privacy + LLM + wound severity | `backend/database/`, `ml/wound_severity/` |
 | Sahil Kumar Gupta | Backend API & PostgreSQL | `backend/api/`, `backend/database/` |
 | Prof. Dipak Kumar Das | PI / reviews | — |
 
@@ -92,9 +93,9 @@ The production **React Native** mobile app and **Flask** clinical API live in se
 - [ ] SAM2 wound segmentation (Adreesh)
 - [ ] Skin classifier EfficientNet-B3 (Kousttav)
 - [ ] Eye models 3a/3b/3c (Shivraj)
-- [ ] Wound severity EfficientNet-B0 (Sharif)
+- [ ] Wound severity EfficientNet-B0 (Saugata)
 - [ ] FastAPI + PostgreSQL (Sahil)
-- [ ] DPDP / federated PoC (Saugata)
+- [ ] DPDP / federated PoC / RAG assistant (Saugata)
 
 ---
 

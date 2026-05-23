@@ -1,6 +1,6 @@
 # Backend (`backend/`)
 
-**Leads:** Sahil Kumar Gupta (API + DB), Shivraj Gulve (inference routes), Saugata Malakar (privacy / compliance)
+**Leads:** Sahil Kumar Gupta (API + DB), Shivraj Gulve (inference routes), Saugata Malakar (privacy / compliance / wound severity ML)
 
 FastAPI service layer, PostgreSQL schemas, and shared utilities for the research and inference platform.
 

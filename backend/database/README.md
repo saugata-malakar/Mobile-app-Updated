@@ -1,6 +1,6 @@
 # Database (`backend/database/`)
 
-**Leads:** Sahil Kumar Gupta, Saugata Malakar
+**Leads:** Sahil Kumar Gupta (schema), Saugata Malakar (privacy, DPDP, `ml/wound_severity/` integration)
 
 PostgreSQL schema, migrations, and DPDP-aware data handling.
 

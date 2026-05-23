@@ -1,6 +1,6 @@
 # Wound Severity Classifier (`ml/wound_severity/`)
 
-**Lead:** Sharif Hossain Sarkar
+**Lead:** Saugata Malakar (Privacy + LLM + wound severity)
 
 Classify Wagner grade, tissue type, and infection probability from preprocessed wound images and segmentation masks.
 

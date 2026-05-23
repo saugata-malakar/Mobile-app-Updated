@@ -15,14 +15,15 @@ alwaysApply: true
 
 IIT Kharagpur research (6 weeks): AI for diabetic foot wounds, periwound skin, and eye contributing factors.
 
-| Intern | Folder |
-|--------|--------|
-| Adreesh Mitra | `cv/` |
-| Kousttav Paul | `ml/skin_classifier/` |
-| Shivraj Gulve | `ml/eye_models/`, `deployment/` |
-| Saugata Malakar | `backend/database/` |
-| Sharif Hossain Sarkar | `ml/wound_severity/` |
-| Sahil Kumar Gupta | `backend/api/`, `backend/database/` |
+**Team:** 5 interns + Prof. Dipak Kumar Das (PI)
+
+| Intern | Role | Folders |
+|--------|------|---------|
+| Adreesh Mitra | Wound CV & segmentation | `cv/` |
+| Kousttav Paul | Skin AI & mobile integration | `ml/skin_classifier/` |
+| Shivraj Gulve | Eye models & deployment | `ml/eye_models/`, `backend/api/`, `deployment/` |
+| Saugata Malakar | Privacy + LLM + wound severity | `backend/database/`, `ml/wound_severity/` |
+| Sahil Kumar Gupta | Backend API & PostgreSQL | `backend/api/`, `backend/database/` |
 
 ## Related repos (separate from this org)
 

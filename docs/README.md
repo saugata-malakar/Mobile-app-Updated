@@ -10,7 +10,7 @@ Project documentation for interns, reviewers, and integration with the mobile pr
 | `DATASETS.md` | Per intern | DFUC, Fitzpatrick, CP-AnemiC, Mendeley usage rules |
 | `API_CONTRACT.md` | Sahil + Shivraj | Request/response JSON for inference endpoints |
 | `DPDP.md` | Saugata | Consent, retention, federated learning PoC |
-| `MODEL_CARD.md` | Per model | Metrics, limitations, bias notes |
+| `MODEL_CARD.md` | Per model | Metrics, limitations, bias notes (wound severity: Saugata) |
 | `ONBOARDING.md` | Prof. Das | Git workflow, PR template, code standards |
 
 ## Datasets (gitignored paths)
