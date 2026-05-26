@@ -15,8 +15,6 @@ const PREFIX_ASHA_PATIENTS = '@hs/asha_patients_';
 const PREFIX_ASHA_SCREENINGS = '@hs/asha_screenings_';
 const PREFIX_ASHA_STATS = '@hs/asha_stats_';
 
-const COMMISSION_PER_COMPLETED_SCREENING_INR = 50;
-
 function keyPatientSelf(phone: string) {
   return `${PREFIX_PROFILE_SELF}${normalizePhone(phone)}`;
 }
@@ -189,16 +187,13 @@ export async function listAshaScreenings(
 async function bumpAshaStats(
   ashaPhone: string,
   deltaScreenings: number,
-  deltaCommission: number,
 ) {
   const key = keyAshaStats(ashaPhone);
   const cur = await readJson<AshaStats>(key, {
     patientCount: 0,
     screeningCount: 0,
-    totalCommissionINR: 0,
   });
   cur.screeningCount += deltaScreenings;
-  cur.totalCommissionINR += deltaCommission;
   const patients = await listAshaPatients(ashaPhone);
   cur.patientCount = patients.length;
   await writeJson(key, cur);
@@ -212,7 +207,6 @@ export async function getAshaStats(ashaPhone: string): Promise<AshaStats> {
     return {
       patientCount: patients.length,
       screeningCount: 0,
-      totalCommissionINR: 0,
     };
   }
   return {
@@ -247,15 +241,8 @@ export async function recordScreeningCompleted(args: {
     const list = await listAshaScreenings(args.ashaWorkerPhone);
     list.unshift(rec);
     await writeJson(key, list);
-    await bumpAshaStats(
-      args.ashaWorkerPhone,
-      1,
-      COMMISSION_PER_COMPLETED_SCREENING_INR,
-    );
+    await bumpAshaStats(args.ashaWorkerPhone, 1);
   }
 
   return rec;
 }
-
-export const COMMISSION_INR_PER_SCREENING =
-  COMMISSION_PER_COMPLETED_SCREENING_INR;

@@ -125,17 +125,6 @@ export default function PatientHome({navigation}: {navigation: Nav}) {
     navigation.navigate('SkinMonitorHome');
   };
 
-  const subscribed =
-    dash?.subscription.status === 'ACTIVE' || dash?.subscription.status === 'TRIAL';
-
-  const requireSubscription = (next: () => void) => {
-    if (subscribed) {
-      next();
-    } else {
-      navigation.navigate('SubscriptionManager');
-    }
-  };
-
   const openAlert = (a: PatientAlert) => {
     navigation.navigate('WoundResult', {
       session_id: `alert_${a.id}`,
@@ -148,7 +137,6 @@ export default function PatientHome({navigation}: {navigation: Nav}) {
 
   const activeWounds = dash?.woundSites.filter(w => w.active) ?? [];
   const alerts = (dash?.alerts ?? []).filter(a => !a.resolved && (a.level === 'amber' || a.level === 'red'));
-  const sub = dash?.subscription;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -189,75 +177,35 @@ export default function PatientHome({navigation}: {navigation: Nav}) {
         <View style={styles.hubRow}>
           <TouchableOpacity
             style={styles.hubCard}
-            onPress={() =>
-              requireSubscription(() => {
-                const sites = dash?.woundSites.filter(w => w.active) ?? [];
-                if (sites.length > 0) {
-                  navigation.navigate('WoundMonitorHome', {
-                    wound_site_id: sites[0].id,
-                    wound_site_label: sites[0].label,
-                  });
-                } else {
-                  navigation.navigate('WoundSiteSelector');
-                }
-              })
-            }>
+            onPress={() => {
+              const sites = dash?.woundSites.filter(w => w.active) ?? [];
+              if (sites.length > 0) {
+                navigation.navigate('WoundMonitorHome', {
+                  wound_site_id: sites[0].id,
+                  wound_site_label: sites[0].label,
+                });
+              } else {
+                navigation.navigate('WoundSiteSelector');
+              }
+            }}>
             <Text style={styles.hubTitle}>Wound monitor</Text>
             <Text style={styles.hubHint}>Weekly photos · P8–P16</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.hubCard}
-            onPress={() => requireSubscription(() => navigation.navigate('SkinMonitorHome'))}>
+            onPress={() => navigation.navigate('SkinMonitorHome')}>
             <Text style={styles.hubTitle}>Skin check</Text>
             <Text style={styles.hubHint}>Monthly · P17–P19</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.hubCard}
-            onPress={() => requireSubscription(() => navigation.navigate('ContributingFactorHome'))}>
+            onPress={() => navigation.navigate('ContributingFactorHome')}>
             <Text style={styles.hubTitle}>Blood & eye</Text>
             <Text style={styles.hubHint}>Quarterly · P20–P23</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 1. Subscription */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Subscription</Text>
-          {sub?.status === 'NONE' && (
-            <>
-              <Text style={styles.cardLineMuted}>You are not subscribed yet.</Text>
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => navigation.navigate('SubscriptionManager')}>
-                <Text style={styles.primaryBtnText}>Start free trial</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          {sub?.status === 'TRIAL' && (
-            <Text style={styles.cardLineMuted}>
-              Free trial: {sub.trialDaysRemaining ?? 0} days remaining. Subscribe to continue.
-            </Text>
-          )}
-          {sub?.status === 'ACTIVE' && (
-            <>
-              <Text style={styles.cardLine}>
-                Plan: {sub.tier ?? '—'} · Next billing: {fmtDate(sub.nextBillingDate)}
-              </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('SubscriptionManager')}>
-                <Text style={styles.editLinkText}>Manage</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          {sub?.status === 'SUSPENDED' && (
-            <View style={styles.warnBox}>
-              <Text style={styles.warnTitle}>Monitoring paused — payment needed</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('SubscriptionManager')}>
-                <Text style={styles.editLinkText}>Update billing</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* 2. My wounds */}
+        {/* 1. My wounds */}
         {activeWounds.length > 0 ? (
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionTitle}>My wounds</Text>

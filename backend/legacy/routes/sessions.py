@@ -10,14 +10,11 @@ from flask import Blueprint, g, request
 from middleware.auth_middleware import require_auth
 from models import (
     AiResult,
-    AshaCommissionLedger,
-    AshaWorker,
     MonitoringSession,
     Photograph,
     WoundSite,
     db,
 )
-from subscription_service import get_patient_subscription, patient_has_module_access
 from utils.alert_engine import generate_alerts_after_ai_result
 from utils.response_helper import error, success
 from utils.validators import sanitise_string
@@ -121,26 +118,6 @@ def _build_stub_ai_result(ms: MonitoringSession) -> AiResult:
     )
 
 
-def _maybe_asha_commission(p, ms: MonitoringSession) -> None:
-    asha_id = getattr(p, "created_by_asha_id", None)
-    if not asha_id:
-        return
-    worker = AshaWorker.query.get(str(asha_id))
-    db.session.add(
-        AshaCommissionLedger(
-            id=str(uuid.uuid4()),
-            asha_id=str(asha_id),
-            patient_id=p.id,
-            session_id=ms.id,
-            commission_type="MONITORING_SESSION",
-            amount_rs=25.0,
-        )
-    )
-    if worker:
-        worker.commission_balance = float(worker.commission_balance or 0) + 25.0
-        db.session.add(worker)
-
-
 @sessions_bp.post("")
 @require_auth
 def create_session():
@@ -211,14 +188,6 @@ def submit_session(session_id: str):
     if err:
         return err
     p = g.current_user
-    sub = get_patient_subscription(p.id)
-    allowed, reason = patient_has_module_access(sub)
-    if not allowed:
-        return error(
-            "subscription_inactive",
-            reason or "Subscription suspended or expired — renew to submit sessions",
-            status=403,
-        )
     ms = MonitoringSession.query.get(session_id)
     if not ms or not _session_owned(ms, p.id):
         return error("not_found", "Session not found", status=404)
@@ -253,7 +222,6 @@ def submit_session(session_id: str):
     air = _build_stub_ai_result(ms)
     db.session.add(air)
     alert_id = generate_alerts_after_ai_result(p, ms, air)
-    _maybe_asha_commission(p, ms)
     db.session.commit()
     body = {"ai_result": _ai_row(air), "session_id": ms.id, "session_type": ms.session_type}
     if alert_id:

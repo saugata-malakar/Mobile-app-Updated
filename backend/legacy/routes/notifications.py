@@ -52,7 +52,6 @@ def _serialize_preferences(pref: NotificationPreference) -> dict:
         "overdue_reminder_after_days": pref.overdue_reminder_after_days,
         "alert_sms_enabled": pref.alert_sms_enabled,
         "alert_push_enabled": pref.alert_push_enabled,
-        "payment_notifications_enabled": pref.payment_notifications_enabled,
         "prescription_notifications_enabled": pref.prescription_notifications_enabled,
         "marketing_enabled": pref.marketing_enabled,
         "language": pref.language or "en",
@@ -167,7 +166,6 @@ def notification_preferences_get():
                 "overdue_reminder_after_days": 2,
                 "alert_sms_enabled": True,
                 "alert_push_enabled": True,
-                "payment_notifications_enabled": True,
                 "prescription_notifications_enabled": True,
                 "marketing_enabled": False,
                 "language": "en",
@@ -183,7 +181,6 @@ def notification_preferences_get():
                 "overdue_reminder_after_days": 2,
                 "alert_sms_enabled": True,
                 "alert_push_enabled": True,
-                "payment_notifications_enabled": True,
                 "prescription_notifications_enabled": True,
                 "marketing_enabled": False,
                 "language": "en",
@@ -214,7 +211,6 @@ def notification_preferences_put():
             overdue_reminder_after_days=2,
             alert_sms_enabled=True,
             alert_push_enabled=True,
-            payment_notifications_enabled=True,
             prescription_notifications_enabled=True,
             marketing_enabled=False,
             language="en",
@@ -247,8 +243,6 @@ def notification_preferences_put():
         pref.alert_sms_enabled = bool(data["alert_sms_enabled"])
     if "alert_push_enabled" in data:
         pref.alert_push_enabled = bool(data["alert_push_enabled"])
-    if "payment_notifications_enabled" in data:
-        pref.payment_notifications_enabled = bool(data["payment_notifications_enabled"])
     if "prescription_notifications_enabled" in data:
         pref.prescription_notifications_enabled = bool(data["prescription_notifications_enabled"])
     if "marketing_enabled" in data:

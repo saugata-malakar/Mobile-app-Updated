@@ -28,7 +28,6 @@ class Doctor(db.Model):
     availability = db.Column(db.Text)
     max_cases_per_day = db.Column(db.Integer, default=20, nullable=False)
     cases_today = db.Column(db.Integer, default=0, nullable=False)
-    fee_per_consult = db.Column(db.Float, default=200.0, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
     rating = db.Column(db.Float, default=5.0, nullable=False)
     onboarded_at = db.Column(db.DateTime(timezone=True))

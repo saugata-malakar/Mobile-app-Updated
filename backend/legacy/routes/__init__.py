@@ -10,8 +10,6 @@ from routes.screenings import screenings_bp
 from routes.notifications import notifications_bp
 from routes.sessions import sessions_bp
 from routes.teleconsults import teleconsults_bp
-from routes.subscriptions import subscriptions_bp
-from routes.payments import payments_bp
 
 
 def register_blueprints(app):
@@ -27,5 +25,3 @@ def register_blueprints(app):
     app.register_blueprint(doctors_bp, url_prefix="/api/v1/doctors")
     app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
     app.register_blueprint(teleconsults_bp, url_prefix="/api/v1/teleconsults")
-    app.register_blueprint(subscriptions_bp, url_prefix="/api/v1/subscriptions")
-    app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")

@@ -22,7 +22,7 @@ export default function RoleSelectScreen({navigation}: {navigation: Nav}) {
           }>
           <Text style={styles.cardTitle}>ASHA worker</Text>
           <Text style={styles.cardHint}>
-            Manage multiple patients, visits, and commission from your portal.
+            Manage multiple patients, visits, and follow-up workflows from your portal.
           </Text>
         </TouchableOpacity>
 

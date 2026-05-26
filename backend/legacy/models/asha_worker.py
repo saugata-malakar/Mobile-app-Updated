@@ -33,10 +33,8 @@ class AshaWorker(db.Model):
     state = db.Column(db.String(80), default="West Bengal")
     device_id = db.Column(db.String(100))
     active = db.Column(db.Boolean, default=True, nullable=False)
-    commission_balance = db.Column(db.Float, default=0.0, nullable=False)
     total_screenings = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=_utcnow)
     updated_at = db.Column(db.DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
     screenings = db.relationship("Screening", back_populates="asha_worker", lazy="dynamic")
-    commissions = db.relationship("Commission", back_populates="asha_worker", lazy="dynamic")

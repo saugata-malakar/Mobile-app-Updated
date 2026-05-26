@@ -65,12 +65,6 @@ def create_app():
 
         ensure_phase_a_seed()
         try:
-            from migrations.upgrade_subscription_d1 import upgrade_subscription_d1
-
-            upgrade_subscription_d1()
-        except Exception:
-            db.session.rollback()
-        try:
             from migrations.upgrade_doctors_web import upgrade_doctors_web
 
             upgrade_doctors_web()
@@ -80,12 +74,6 @@ def create_app():
             from migrations.upgrade_patients_phase_a import upgrade_patients_phase_a
 
             upgrade_patients_phase_a()
-        except Exception:
-            db.session.rollback()
-        try:
-            from migrations.upgrade_ai_result_details_json import upgrade as upgrade_ai_details_json
-
-            upgrade_ai_details_json()
         except Exception:
             db.session.rollback()
         try:

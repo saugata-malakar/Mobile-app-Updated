@@ -1,19 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   PatientDashboardSnapshot,
-  PatientSubscription,
   WoundSiteRecord,
 } from '../types/patientDashboard';
 
 const KEY = '@hs/patient_dashboard_v1';
 
 const defaultSnapshot = (): PatientDashboardSnapshot => ({
-  subscription: {
-    status: 'TRIAL',
-    tier: null,
-    trialDaysRemaining: 14,
-    nextBillingDate: null,
-  },
   woundSites: [
     {
       id: 'ws_demo_1',
@@ -85,12 +78,6 @@ async function write(s: PatientDashboardSnapshot) {
 
 export async function getPatientDashboard(): Promise<PatientDashboardSnapshot> {
   return read();
-}
-
-export async function updateSubscription(sub: Partial<PatientSubscription>) {
-  const s = await read();
-  s.subscription = {...s.subscription, ...sub};
-  await write(s);
 }
 
 export async function addWoundSite(site: Omit<WoundSiteRecord, 'id'>): Promise<WoundSiteRecord> {

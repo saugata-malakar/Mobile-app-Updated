@@ -55,7 +55,6 @@ export default function NotificationSettingsScreen({navigation}: {navigation: Na
   const [overdueDays, setOverdueDays] = useState('2');
   const [sms, setSms] = useState(true);
   const [push, setPush] = useState(true);
-  const [pay, setPay] = useState(true);
   const [rx, setRx] = useState(true);
   const [mkt, setMkt] = useState(false);
   const [fcmField, setFcmField] = useState('');
@@ -78,7 +77,6 @@ export default function NotificationSettingsScreen({navigation}: {navigation: Na
       alert: L ? 'সতর্কতা' : 'Alerts',
       sms: 'SMS',
       push: L ? 'পুশ' : 'Push',
-      pay: L ? 'পেমেন্ট বিজ্ঞপ্তি' : 'Payment reminders',
       rx: L ? 'প্রেসক্রিপশন বিজ্ঞপ্তি' : 'Prescription notifications',
       mkt: L ? 'মার্কেটিং (ঐচ্ছিক)' : 'Marketing (optional)',
       fcm: L ? 'FCM ডিভাইস টোকেন (ঐচ্ছিক)' : 'FCM device token (optional)',
@@ -100,7 +98,6 @@ export default function NotificationSettingsScreen({navigation}: {navigation: Na
       setOverdueDays(String(p.overdue_reminder_after_days ?? 2));
       setSms(p.alert_sms_enabled);
       setPush(p.alert_push_enabled);
-      setPay(p.payment_notifications_enabled);
       setRx(p.prescription_notifications_enabled);
       setMkt(p.marketing_enabled);
       setLang(p.language === 'bn' ? 'bn' : 'en');
@@ -132,7 +129,6 @@ export default function NotificationSettingsScreen({navigation}: {navigation: Na
         overdue_reminder_after_days: od,
         alert_sms_enabled: sms,
         alert_push_enabled: push,
-        payment_notifications_enabled: pay,
         prescription_notifications_enabled: rx,
         marketing_enabled: mkt,
         language: lang,
@@ -228,12 +224,6 @@ export default function NotificationSettingsScreen({navigation}: {navigation: Na
         <TouchableOpacity style={styles.row} onPress={() => setPush(v => !v)}>
           <Text style={styles.rowLabel}>{t.push}</Text>
           <Text style={styles.rowVal}>{push ? '✓' : '—'}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.section}>{t.pay}</Text>
-        <TouchableOpacity style={styles.row} onPress={() => setPay(v => !v)}>
-          <Text style={styles.rowLabel}>{lang === 'bn' ? 'চালু' : 'Enabled'}</Text>
-          <Text style={styles.rowVal}>{pay ? '✓' : '—'}</Text>
         </TouchableOpacity>
 
         <Text style={styles.section}>{t.rx}</Text>

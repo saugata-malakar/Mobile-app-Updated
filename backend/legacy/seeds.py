@@ -43,7 +43,6 @@ def run():
                 nmc_number="NMC001234",
                 specialisation="General Physician",
                 languages="Bengali,Hindi,English",
-                fee_per_consult=200.0,
                 availability=json.dumps(availability),
             )
         )
@@ -55,7 +54,6 @@ def run():
                 nmc_number="NMC005678",
                 specialisation="Dermatologist",
                 languages="Bengali,English",
-                fee_per_consult=300.0,
             )
         )
         db.session.add(
@@ -66,7 +64,6 @@ def run():
                 nmc_number="NMC009012",
                 specialisation="Ophthalmologist",
                 languages="Hindi,English",
-                fee_per_consult=250.0,
             )
         )
 

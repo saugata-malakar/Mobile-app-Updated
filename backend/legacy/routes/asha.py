@@ -2,15 +2,13 @@ import uuid
 from datetime import datetime, timezone
 
 from flask import Blueprint, g, request
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 
 from middleware.auth_middleware import require_asha
 from models import (
-    AshaCommissionLedger,
     AshaPatientAssignment,
     AshaTrainingModule,
     AshaWorker,
-    Commission,
     Consultation,
     Patient,
     Screening,
@@ -146,12 +144,6 @@ def asha_dashboard():
         Screening.created_at >= month_start,
     ).count()
 
-    commission_month = (
-        db.session.query(db.func.coalesce(db.func.sum(Commission.amount), 0.0))
-        .filter(Commission.asha_id == worker.id, Commission.created_at >= month_start)
-        .scalar()
-    )
-
     recent = (
         Screening.query.filter_by(asha_id=worker.id)
         .order_by(Screening.created_at.desc())
@@ -174,8 +166,6 @@ def asha_dashboard():
         {
             "screenings_today": screenings_today,
             "screenings_month": screenings_month,
-            "commission_month": float(commission_month or 0),
-            "commission_balance": float(worker.commission_balance or 0),
             "recent_screenings": recent_out,
         }
     )
@@ -205,31 +195,6 @@ def asha_screenings():
             }
         )
     return paginated(out, total, page, per_page)
-
-
-@asha_bp.get("/me/commissions")
-@require_asha
-def asha_commissions():
-    worker = g.current_user
-    items = (
-        Commission.query.filter_by(asha_id=worker.id).order_by(Commission.created_at.desc()).all()
-    )
-    out = []
-    total_paid = 0.0
-    total_pending = 0.0
-    for c in items:
-        row = {
-            "amount": c.amount,
-            "type": c.commission_type,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
-            "paid_at": c.paid_at.isoformat() if c.paid_at else None,
-        }
-        out.append(row)
-        if c.paid_at:
-            total_paid += float(c.amount)
-        else:
-            total_pending += float(c.amount)
-    return success({"items": out, "total_paid": total_paid, "total_pending": total_pending})
 
 
 _TRAINING_SPECS = (
@@ -394,46 +359,3 @@ def asha_offline_queue_stub():
     )
 
 
-@asha_bp.get("/me/enrollment-summary")
-@require_asha
-def asha_enrollment_summary():
-    """Phase C6 — A10 enrollment snapshot."""
-    worker = g.current_user
-    n = AshaPatientAssignment.query.filter_by(asha_id=worker.id, is_active=True).count()
-    return success({"assigned_patients": n, "geographic_verified_pending": 0})
-
-
-@asha_bp.get("/me/commission-dashboard")
-@require_asha
-def asha_commission_dashboard():
-    """Phase C6 — ledger + balance for A15."""
-    worker = g.current_user
-    rows = (
-        AshaCommissionLedger.query.filter_by(asha_id=worker.id)
-        .order_by(AshaCommissionLedger.earned_at.desc())
-        .limit(40)
-        .all()
-    )
-    pending_total = (
-        db.session.query(func.coalesce(func.sum(AshaCommissionLedger.amount_rs), 0.0))
-        .filter(AshaCommissionLedger.asha_id == worker.id, AshaCommissionLedger.payment_status == "PENDING")
-        .scalar()
-    )
-    items = [
-        {
-            "id": r.id,
-            "amount_rs": r.amount_rs,
-            "commission_type": r.commission_type,
-            "payment_status": r.payment_status,
-            "earned_at": r.earned_at.isoformat() if r.earned_at else None,
-            "session_id": r.session_id,
-        }
-        for r in rows
-    ]
-    return success(
-        {
-            "commission_balance": float(worker.commission_balance or 0),
-            "pending_rs": float(pending_total or 0),
-            "items": items,
-        }
-    )

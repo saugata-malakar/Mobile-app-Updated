@@ -237,9 +237,6 @@ def patient_register():
     )
     db.session.add(patient)
     db.session.flush()
-    from subscription_service import ensure_trial_subscription
-
-    ensure_trial_subscription(patient.id)
     _register_device(patient.id, "patient")
     access, refresh = make_tokens(patient.id, "patient")
     _audit(patient.id, "patient", "patient_register")

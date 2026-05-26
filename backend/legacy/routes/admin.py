@@ -28,11 +28,6 @@ def admin_dashboard():
         Consultation.status == "completed",
         Consultation.completed_at >= today,
     ).count()
-    revenue = (
-        db.session.query(db.func.coalesce(db.func.sum(Consultation.fee_amount), 0.0))
-        .filter(Consultation.status == "completed", Consultation.completed_at >= today)
-        .scalar()
-    )
     return success(
         {
             "total_patients": total_patients,
@@ -40,7 +35,6 @@ def admin_dashboard():
             "total_screenings_today": screenings_today,
             "pending_consultations": pending_consultations,
             "completed_consultations_today": completed_today,
-            "total_revenue_today": float(revenue or 0),
         }
     )
 
@@ -75,7 +69,6 @@ def admin_asha():
                 "name": w.name,
                 "village": w.village,
                 "screening_count": screening_count,
-                "commission_balance": float(w.commission_balance or 0),
                 "active": w.active,
             }
         )
@@ -101,7 +94,6 @@ def admin_create_doctor():
         nmc_number=nmc,
         specialisation=data.get("specialisation"),
         languages=data.get("languages", "Bengali,Hindi"),
-        fee_per_consult=float(data.get("fee_per_consult", 200.0)),
     )
     db.session.add(doc)
     db.session.commit()

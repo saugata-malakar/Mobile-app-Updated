@@ -19,7 +19,6 @@ from models import (
     Patient,
     Prescription,
     Screening,
-    Subscription,
     TeleconsultRequest,
     WoundSite,
     db,
@@ -401,10 +400,6 @@ def department_dashboard():
         doctor_ids = [doc.id]
 
     month_start = datetime(_utcnow().year, _utcnow().month, 1, tzinfo=timezone.utc)
-    active_subs = Subscription.query.filter(
-        Subscription.status.in_(("ACTIVE", "TRIAL", "GRACE_PERIOD"))
-    ).count()
-
     open_red = Alert.query.filter(
         Alert.resolved_at.is_(None), Alert.alert_level == "RED"
     ).count()
@@ -451,7 +446,6 @@ def department_dashboard():
             "kpis": {
                 "patients_monitored": int(patients_monitored or 0),
                 "wound_sessions_month": sessions_month,
-                "active_subscriptions": active_subs,
                 "open_red_alerts": open_red,
                 "open_amber_alerts": open_amber,
                 "pending_teleconsults": teleconsults_pending,
@@ -525,17 +519,10 @@ def doctor_stats():
         Consultation.created_at >= month_start,
     ).count()
 
-    earnings = (
-        db.session.query(db.func.coalesce(db.func.sum(Consultation.fee_amount), 0.0))
-        .filter(Consultation.doctor_id == doc.id, Consultation.status == "completed")
-        .scalar()
-    )
-
     return success(
         {
             "cases_today": cases_today,
             "cases_this_month": cases_month,
             "average_rating": doc.rating,
-            "total_earnings": float(earnings or 0),
         }
     )

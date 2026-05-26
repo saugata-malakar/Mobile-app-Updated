@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from models import AshaWorker, Commission, Patient, Screening, db
+from models import Patient, Screening, db
 
 
 def _auth_headers(token):
@@ -127,23 +127,3 @@ def test_get_other_patient_screening(client, app, sample_patient):
     res = client.get(f"/api/v1/screenings/{sid}", headers=_auth_headers(token))
     assert res.status_code == 403
 
-
-def test_asha_commission_created_on_screening(client, app, sample_patient, sample_asha):
-    token = _login_patient(client)
-    payload = {
-        "condition_type": "wound",
-        "risk_level": "high",
-        "consent_timestamp": datetime.now(timezone.utc).isoformat(),
-        "asha_id": sample_asha,
-    }
-    res = client.post(
-        "/api/v1/screenings",
-        data=json.dumps(payload),
-        headers=_auth_headers(token),
-    )
-    assert res.status_code == 201
-    screening_id = res.get_json()["data"]["screening_id"]
-    with app.app_context():
-        c = Commission.query.filter_by(screening_id=screening_id).first()
-        assert c is not None
-        assert c.amount == 15.0

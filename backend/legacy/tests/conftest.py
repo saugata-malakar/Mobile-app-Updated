@@ -17,9 +17,6 @@ def app():
         from migrations.seed_phase_a import ensure_phase_a_seed
 
         ensure_phase_a_seed()
-        from migrations.upgrade_subscription_d1 import upgrade_subscription_d1
-
-        upgrade_subscription_d1()
     yield flask_app
     with flask_app.app_context():
         db.session.remove()
@@ -43,10 +40,6 @@ def sample_patient(app):
             consent_given_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
         )
         db.session.add(p)
-        db.session.flush()
-        from subscription_service import ensure_trial_subscription
-
-        ensure_trial_subscription(p.id)
         db.session.commit()
         return p.id
 

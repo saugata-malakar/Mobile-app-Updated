@@ -145,8 +145,6 @@ def patient_consultations():
                 "status": c.status,
                 "doctor_name": doc_name,
                 "time_slot": c.time_slot,
-                "fee_amount": c.fee_amount,
-                "payment_status": c.payment_status,
                 "created_at": c.created_at.isoformat() if c.created_at else None,
             }
         )

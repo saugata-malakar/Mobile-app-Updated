@@ -29,7 +29,6 @@ def _default_pref_for_user(user_id: str) -> NotificationPreference:
         overdue_reminder_after_days=2,
         alert_sms_enabled=True,
         alert_push_enabled=True,
-        payment_notifications_enabled=True,
         prescription_notifications_enabled=True,
         marketing_enabled=False,
         language="en",
@@ -66,17 +65,12 @@ def _resolve_send(
             return False, False
         return push_ok, sms_ok
 
-    if notification_type in ("PAYMENT_DUE", "PAYMENT_FAILED", "PAYMENT_SUCCESS"):
-        if not pref.payment_notifications_enabled:
-            return False, False
-        return push_ok, sms_ok
-
     if notification_type == "PRESCRIPTION_READY":
         if not pref.prescription_notifications_enabled:
             return False, False
         return push_ok, sms_ok
 
-    if notification_type in ("TELECONSULT_SCHEDULED", "TELECONSULT_CONFIRMED", "CONSENT_REQUIRED", "SUBSCRIPTION_EXPIRING"):
+    if notification_type in ("TELECONSULT_SCHEDULED", "TELECONSULT_CONFIRMED", "CONSENT_REQUIRED"):
         return push_ok, sms_ok
 
     if notification_type == "SYSTEM_MESSAGE":
@@ -232,40 +226,6 @@ def notify_teleconsult_confirmed(user_id: str, teleconsult_id: str) -> None:
     )
 
 
-def notify_payment_due(user_id: str, amount_rs: float, due_text: str) -> None:
-    send_notification(
-        recipient_user_id=user_id,
-        notification_type="PAYMENT_DUE",
-        title_en="Payment due",
-        body_en=f"Rs. {amount_rs:.0f} — {due_text}",
-        channel="BOTH",
-        title_bn="পেমেন্ট বাকি",
-        data={"amount_rs": amount_rs},
-    )
-
-
-def notify_payment_failed(user_id: str, reason: str) -> None:
-    send_notification(
-        recipient_user_id=user_id,
-        notification_type="PAYMENT_FAILED",
-        title_en="Payment failed",
-        body_en=reason or "Your payment could not be processed.",
-        channel="BOTH",
-        title_bn="পেমেন্ট ব্যর্থ",
-    )
-
-
-def notify_payment_success(user_id: str, detail: str = "") -> None:
-    send_notification(
-        recipient_user_id=user_id,
-        notification_type="PAYMENT_SUCCESS",
-        title_en="Payment received",
-        body_en=detail or "Thank you — your payment was successful.",
-        channel="BOTH",
-        title_bn="পেমেন্ট সফল",
-    )
-
-
 def notify_consent_required(user_id: str, module: str) -> None:
     send_notification(
         recipient_user_id=user_id,
@@ -275,18 +235,6 @@ def notify_consent_required(user_id: str, module: str) -> None:
         channel="BOTH",
         title_bn="সম্মতি প্রয়োজন",
         data={"module": module},
-    )
-
-
-def notify_subscription_expiring(user_id: str, expires_on: str) -> None:
-    send_notification(
-        recipient_user_id=user_id,
-        notification_type="SUBSCRIPTION_EXPIRING",
-        title_en="Subscription expiring",
-        body_en=f"Your plan ends on {expires_on}. Renew to keep wound monitoring.",
-        channel="BOTH",
-        title_bn="সাবস্ক্রিপশন শেষ হচ্ছে",
-        data={"expires_on": expires_on},
     )
 
 

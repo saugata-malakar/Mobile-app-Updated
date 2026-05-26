@@ -79,11 +79,6 @@ export default function PatientProfileScreen({navigation}: {navigation: Nav}) {
           </>
         )}
 
-        <Text style={styles.h}>Subscription</Text>
-        <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('SubscriptionManager')}>
-          <Text style={styles.btnText}>Manage subscription</Text>
-        </TouchableOpacity>
-
         {profile && (
           <Text style={styles.footer}>
             {profile.fullName} · {profile.phone}

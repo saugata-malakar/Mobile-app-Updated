@@ -128,12 +128,3 @@ def test_asha_patients_sync_duplicate_phone_updates(client, app):
     assert body["success"] is True
     assert body["message"] == "Patient updated"
 
-
-def test_asha_commission_list(client, sample_asha):
-    token = _asha_token(client)
-    res = client.get(
-        "/api/v1/asha/me/commissions",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert res.status_code == 200
-    assert "total_paid" in res.get_json()["data"]

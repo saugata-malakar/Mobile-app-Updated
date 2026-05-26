@@ -1,14 +1,3 @@
-export type SubscriptionStatus = 'NONE' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED';
-
-export type SubscriptionTier = 'BASIC' | 'STANDARD' | 'PREMIUM' | null;
-
-export type PatientSubscription = {
-  status: SubscriptionStatus;
-  tier: SubscriptionTier;
-  trialDaysRemaining?: number;
-  nextBillingDate?: string | null;
-};
-
 export type WoundDot = 'green' | 'amber' | 'red';
 
 export type WoundSiteRecord = {
@@ -52,7 +41,6 @@ export type UpcomingTeleconsult = {
 } | null;
 
 export type PatientDashboardSnapshot = {
-  subscription: PatientSubscription;
   woundSites: WoundSiteRecord[];
   tasks: ScheduledTask[];
   alerts: PatientAlert[];

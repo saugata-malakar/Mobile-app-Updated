@@ -5,7 +5,6 @@ export type NotificationPrefs = {
   overdue_reminder_after_days: number;
   alert_sms_enabled: boolean;
   alert_push_enabled: boolean;
-  payment_notifications_enabled: boolean;
   prescription_notifications_enabled: boolean;
   marketing_enabled: boolean;
   language: 'en' | 'bn';

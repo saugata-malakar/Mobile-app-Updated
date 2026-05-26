@@ -28,8 +28,6 @@ class Consultation(db.Model):
     time_slot = db.Column(db.String(50))
     status = db.Column(db.String(20), default="pending", nullable=False)
     queue_position = db.Column(db.Integer)
-    fee_amount = db.Column(db.Float, nullable=False)
-    payment_status = db.Column(db.String(20), default="pending", nullable=False)
     assigned_at = db.Column(db.DateTime(timezone=True))
     completed_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=_utcnow)

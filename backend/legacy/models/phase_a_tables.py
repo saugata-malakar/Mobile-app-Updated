@@ -9,22 +9,6 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
-class SubscriptionTier(db.Model):
-    __tablename__ = "subscription_tiers"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    tier_name = db.Column(db.String(20), nullable=False)
-    price_monthly_rs = db.Column(db.Float, nullable=False)
-    price_annual_rs = db.Column(db.Float)
-    wound_sessions_per_month = db.Column(db.Integer)
-    skin_sessions_per_month = db.Column(db.Integer)
-    contributing_factor_sessions_per_quarter = db.Column(db.Integer)
-    teleconsult_included_per_month = db.Column(db.Integer, default=0)
-    features = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime(timezone=True), default=_utcnow, nullable=False)
-
-
 class AppConfig(db.Model):
     __tablename__ = "app_config"
 
@@ -189,19 +173,6 @@ class AshaPatientAssignment(db.Model):
     geographic_verified = db.Column(db.Boolean, default=False)
 
 
-class AshaCommissionLedger(db.Model):
-    __tablename__ = "asha_commissions"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    asha_id = db.Column(db.String(36), db.ForeignKey("asha_workers.id"), nullable=False, index=True)
-    patient_id = db.Column(db.String(36), db.ForeignKey("patients.id"))
-    session_id = db.Column(db.String(36), db.ForeignKey("monitoring_sessions.id"))
-    commission_type = db.Column(db.String(40), nullable=False)
-    amount_rs = db.Column(db.Float, nullable=False)
-    earned_at = db.Column(db.DateTime(timezone=True), default=_utcnow, nullable=False)
-    payment_status = db.Column(db.String(20), default="PENDING")
-
-
 class AshaTrainingModule(db.Model):
     __tablename__ = "asha_training_modules"
 
@@ -252,52 +223,6 @@ class TeleconsultRequest(db.Model):
     assigned_doctor_id = db.Column(db.String(36), db.ForeignKey("doctors.id"))
 
 
-class Subscription(db.Model):
-    __tablename__ = "subscriptions"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = db.Column(db.String(36), db.ForeignKey("patients.id"), nullable=False, index=True)
-    tier_id = db.Column(db.String(36), db.ForeignKey("subscription_tiers.id"), nullable=False)
-    status = db.Column(db.String(30), nullable=False, default="TRIAL")
-    trial_ends_at = db.Column(db.DateTime(timezone=True))
-    started_at = db.Column(db.DateTime(timezone=True))
-    current_period_start = db.Column(db.DateTime(timezone=True))
-    current_period_end = db.Column(db.DateTime(timezone=True))
-    next_billing_date = db.Column(db.DateTime(timezone=True))
-    grace_period_ends_at = db.Column(db.DateTime(timezone=True))
-    paused_at = db.Column(db.DateTime(timezone=True))
-    pause_ends_at = db.Column(db.DateTime(timezone=True))
-    cancelled_at = db.Column(db.DateTime(timezone=True))
-    cancellation_reason = db.Column(db.Text)
-    razorpay_subscription_id = db.Column(db.String(80))
-    razorpay_customer_id = db.Column(db.String(80))
-    auto_renew = db.Column(db.Boolean, default=True, nullable=False)
-    amount_rs = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=_utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False)
-
-    tier = db.relationship("SubscriptionTier", lazy="joined")
-
-
-class PaymentTransaction(db.Model):
-    __tablename__ = "payment_transactions"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    subscription_id = db.Column(db.String(36), db.ForeignKey("subscriptions.id"))
-    patient_id = db.Column(db.String(36), db.ForeignKey("patients.id"), nullable=False, index=True)
-    transaction_type = db.Column(db.String(40), nullable=False)
-    amount_rs = db.Column(db.Float, nullable=False)
-    currency = db.Column(db.String(8), default="INR")
-    status = db.Column(db.String(30), nullable=False)
-    razorpay_payment_id = db.Column(db.String(80))
-    razorpay_order_id = db.Column(db.String(80))
-    payment_method = db.Column(db.String(20))
-    initiated_at = db.Column(db.DateTime(timezone=True), default=_utcnow, nullable=False)
-    completed_at = db.Column(db.DateTime(timezone=True))
-    failure_reason = db.Column(db.Text)
-    receipt_gcs_url = db.Column(db.String(512))
-
-
 class SessionSchedule(db.Model):
     __tablename__ = "session_schedule"
 
@@ -305,7 +230,6 @@ class SessionSchedule(db.Model):
     patient_id = db.Column(db.String(36), db.ForeignKey("patients.id"), nullable=False, index=True)
     wound_site_id = db.Column(db.String(36), db.ForeignKey("wound_sites.id"))
     session_type = db.Column(db.String(40), nullable=False)
-    subscription_id = db.Column(db.String(36), db.ForeignKey("subscriptions.id"))
     scheduled_date = db.Column(db.String(32), nullable=False)
     due_by_date = db.Column(db.String(32), nullable=False)
     status = db.Column(db.String(20), default="UPCOMING")
@@ -347,7 +271,6 @@ class NotificationPreference(db.Model):
     overdue_reminder_after_days = db.Column(db.Integer, default=2, nullable=False)
     alert_sms_enabled = db.Column(db.Boolean, default=True)
     alert_push_enabled = db.Column(db.Boolean, default=True)
-    payment_notifications_enabled = db.Column(db.Boolean, default=True, nullable=False)
     prescription_notifications_enabled = db.Column(db.Boolean, default=True, nullable=False)
     marketing_enabled = db.Column(db.Boolean, default=False, nullable=False)
     language = db.Column(db.String(5), default="en")

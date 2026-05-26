@@ -39,7 +39,6 @@ def test_create_consultation_async(client, app, sample_patient):
         headers=_auth_headers(token),
     )
     assert res.status_code == 201
-    assert res.get_json()["data"]["fee_amount"] == 99.0
 
 
 def test_create_consultation_scheduled_no_slot(client, app, sample_patient):
@@ -62,7 +61,6 @@ def test_create_consultation_scheduled_with_slot(client, app, sample_patient):
         headers=_auth_headers(token),
     )
     assert res.status_code == 201
-    assert res.get_json()["data"]["fee_amount"] == 149.0
 
 
 def test_create_consultation_instant(client, app, sample_patient, sample_doctor):
@@ -74,8 +72,6 @@ def test_create_consultation_instant(client, app, sample_patient, sample_doctor)
         headers=_auth_headers(token),
     )
     assert res.status_code == 201
-    body = res.get_json()["data"]
-    assert body["fee_amount"] == 199.0
 
 
 def test_get_consultation_status(client, app, sample_patient):
@@ -146,7 +142,6 @@ def test_cancel_completed_consultation(client, app, sample_patient, sample_docto
             doctor_id=sample_doctor,
             mode="async",
             status="completed",
-            fee_amount=99.0,
             completed_at=datetime.now(timezone.utc),
         )
         db.session.add(c)

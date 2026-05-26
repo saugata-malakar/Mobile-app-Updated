@@ -21,15 +21,11 @@ PHASE_A_TABLES = [
     "alerts",
     "asha_workers",
     "asha_patient_assignments",
-    "asha_commissions",
     "asha_training_modules",
     "doctors",
     "doctor_patient_assignments",
     "teleconsult_requests",
     "prescriptions",
-    "subscription_tiers",
-    "subscriptions",
-    "payment_transactions",
     "session_schedule",
     "notifications",
     "notification_preferences",
@@ -42,5 +38,5 @@ PHASE_A_TABLES = [
 def describe_phase_a_schema():
     return {
         "tables_documented": PHASE_A_TABLES,
-        "note": "ORM models are source of truth; legacy tables screenings, consultations, commissions, devices, admins remain.",
+        "note": "ORM models are source of truth; legacy tables screenings, consultations, devices, admins remain.",
     }

@@ -5,7 +5,7 @@ from flask import Blueprint, g, request
 
 from middleware.auth_middleware import require_auth
 from middleware.rate_limiter import limiter
-from models import AshaWorker, AuditLog, Commission, Screening, db
+from models import AshaWorker, AuditLog, Screening, db
 from utils.photo_handler import compress_base64_photo, photos_to_json_string, validate_photo_data
 from utils.response_helper import error, success
 from utils.validators import parse_json_object, sanitise_string, validate_condition_type, validate_risk_level
@@ -99,15 +99,7 @@ def create_screening():
     db.session.flush()
 
     if asha:
-        comm = Commission(
-            asha_id=asha.id,
-            screening_id=screening.id,
-            amount=15.0,
-            commission_type="screening",
-        )
-        db.session.add(comm)
         asha.total_screenings = int(asha.total_screenings or 0) + 1
-        asha.commission_balance = float(asha.commission_balance or 0) + 15.0
 
     db.session.add(
         AuditLog(

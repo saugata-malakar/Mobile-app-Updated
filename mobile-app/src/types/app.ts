@@ -38,5 +38,4 @@ export interface ScreeningRecord {
 export interface AshaStats {
   patientCount: number;
   screeningCount: number;
-  totalCommissionINR: number;
 }

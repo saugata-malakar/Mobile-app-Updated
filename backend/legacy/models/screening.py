@@ -34,4 +34,3 @@ class Screening(db.Model):
     patient = db.relationship("Patient", back_populates="screenings")
     asha_worker = db.relationship("AshaWorker", back_populates="screenings")
     consultation = db.relationship("Consultation", back_populates="screening", uselist=False)
-    commissions = db.relationship("Commission", back_populates="screening", lazy="dynamic")

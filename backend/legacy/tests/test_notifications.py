@@ -91,7 +91,6 @@ def test_preferences_put_get(client, app):
         "overdue_reminder_enabled": False,
         "alert_sms_enabled": True,
         "alert_push_enabled": False,
-        "payment_notifications_enabled": True,
         "prescription_notifications_enabled": False,
         "marketing_enabled": False,
         "language": "bn",

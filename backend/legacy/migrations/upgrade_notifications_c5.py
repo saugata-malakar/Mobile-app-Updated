@@ -39,7 +39,6 @@ def upgrade() -> list[str]:
         ("session_reminder_days_before", "ALTER TABLE notification_preferences ADD COLUMN session_reminder_days_before TEXT DEFAULT '[1]'"),
         ("overdue_reminder_enabled", "ALTER TABLE notification_preferences ADD COLUMN overdue_reminder_enabled INTEGER NOT NULL DEFAULT 1"),
         ("overdue_reminder_after_days", "ALTER TABLE notification_preferences ADD COLUMN overdue_reminder_after_days INTEGER NOT NULL DEFAULT 2"),
-        ("payment_notifications_enabled", "ALTER TABLE notification_preferences ADD COLUMN payment_notifications_enabled INTEGER NOT NULL DEFAULT 1"),
         ("prescription_notifications_enabled", "ALTER TABLE notification_preferences ADD COLUMN prescription_notifications_enabled INTEGER NOT NULL DEFAULT 1"),
         ("marketing_enabled", "ALTER TABLE notification_preferences ADD COLUMN marketing_enabled INTEGER NOT NULL DEFAULT 0"),
         ("language", "ALTER TABLE notification_preferences ADD COLUMN language TEXT DEFAULT 'en'"),

@@ -12,9 +12,7 @@ import ConditionSelector from '../screens/ConditionSelector';
 import CameraScreen from '../screens/CameraScreen';
 import ResultScreen from '../screens/ResultScreen';
 import AshaHome from '../screens/AshaHome';
-import AshaCommissionDashboard from '../screens/AshaCommissionDashboard';
 import AshaOfflineQueue from '../screens/AshaOfflineQueue';
-import AshaEnrollMonitoring from '../screens/AshaEnrollMonitoring';
 import AshaReferralForm from '../screens/AshaReferralForm';
 import ConsentScreen from '../screens/ConsentScreen';
 import MedicalHistorySetupScreen from '../screens/MedicalHistorySetupScreen';
@@ -37,8 +35,6 @@ import ContributingFactorHome from '../screens/ContributingFactorHome';
 import PallorCaptureGuide from '../screens/PallorCaptureGuide';
 import RedEyeCapture from '../screens/RedEyeCapture';
 import ContributingFactorResult from '../screens/ContributingFactorResult';
-import SubscriptionManagerScreen from '../screens/SubscriptionManagerScreen';
-import PaymentScreen from '../screens/PaymentScreen';
 import ProgressReportScreen from '../screens/ProgressReportScreen';
 import DataPrivacySettings from '../screens/DataPrivacySettings';
 import PatientProfileScreen from '../screens/PatientProfileScreen';
@@ -171,20 +167,11 @@ export type RootStackParamList = {
   PallorCaptureGuide: undefined;
   RedEyeCapture: undefined;
   ContributingFactorResult: undefined;
-  SubscriptionManager: undefined;
-  PaymentScreen: {
-    tier: string;
-    amountInr: number;
-    tierId?: string;
-    action?: 'subscribe' | 'upgrade';
-  };
   ProgressReport: {wound_site_id?: string} | undefined;
   DataPrivacySettings: undefined;
   PatientProfile: {initialTab?: 'history' | 'rx' | 'progress' | 'medical'} | undefined;
   AshaHome: undefined;
-  AshaCommissionDashboard: undefined;
   AshaOfflineQueue: undefined;
-  AshaEnrollMonitoring: {patientId?: string; patientName?: string} | undefined;
   AshaReferralForm: {
     patientId: string;
     patientName: string;
@@ -244,9 +231,7 @@ export default function RootNavigator() {
         />
         <Stack.Screen name="Consent" component={ConsentScreen} />
         <Stack.Screen name="AshaHome" component={AshaHome} />
-        <Stack.Screen name="AshaCommissionDashboard" component={AshaCommissionDashboard} />
         <Stack.Screen name="AshaOfflineQueue" component={AshaOfflineQueue} />
-        <Stack.Screen name="AshaEnrollMonitoring" component={AshaEnrollMonitoring} />
         <Stack.Screen name="AshaReferralForm" component={AshaReferralForm} />
         <Stack.Screen name="ConsultRequest" component={ConsultRequestScreen} />
         <Stack.Screen name="QueueStatus" component={QueueStatusScreen} />
@@ -267,8 +252,6 @@ export default function RootNavigator() {
         <Stack.Screen name="PallorCaptureGuide" component={PallorCaptureGuide} />
         <Stack.Screen name="RedEyeCapture" component={RedEyeCapture} />
         <Stack.Screen name="ContributingFactorResult" component={ContributingFactorResult} />
-        <Stack.Screen name="SubscriptionManager" component={SubscriptionManagerScreen} />
-        <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
         <Stack.Screen name="ProgressReport" component={ProgressReportScreen} />
         <Stack.Screen name="DataPrivacySettings" component={DataPrivacySettings} />
         <Stack.Screen name="PatientProfile" component={PatientProfileScreen} />

@@ -8,7 +8,6 @@ from middleware.auth_middleware import require_auth, require_doctor, require_ash
 from middleware.rate_limiter import limiter
 from models import (
     AuditLog,
-    Commission,
     Consultation,
     Doctor,
     Patient,
@@ -29,14 +28,6 @@ consultations_bp = Blueprint("consultations", __name__)
 
 def _utcnow():
     return datetime.now(timezone.utc)
-
-
-def _mode_fee(mode: str) -> float:
-    if mode == "async":
-        return 99.0
-    if mode == "scheduled":
-        return 149.0
-    return 199.0
 
 
 def _map_slot(slot: str | None) -> str | None:
@@ -81,7 +72,6 @@ def create_consultation():
     if existing:
         return error("conflict", "Active consultation already exists for screening", status=409)
 
-    fee = _mode_fee(mode)
     qpos = calculate_queue_position()
     wait_min = calculate_wait_time(qpos, mode)
 
@@ -106,8 +96,6 @@ def create_consultation():
         time_slot=_map_slot(time_slot),
         status=status,
         queue_position=qpos,
-        fee_amount=fee,
-        payment_status="pending",
         assigned_at=assigned_at,
     )
     db.session.add(cons)
@@ -142,7 +130,6 @@ def create_consultation():
             "status": cons.status,
             "queue_position": cons.queue_position,
             "estimated_wait_minutes": wait_min,
-            "fee_amount": cons.fee_amount,
             "doctor": doc_payload,
         },
         status=201,
@@ -301,19 +288,6 @@ def add_prescription(consultation_id):
     db.session.add(pr)
     c.status = "completed"
     c.completed_at = _utcnow()
-
-    screening = c.screening
-    if screening and screening.asha_id:
-        comm = Commission(
-            asha_id=screening.asha_id,
-            screening_id=screening.id,
-            amount=20.0,
-            commission_type="referral",
-        )
-        db.session.add(comm)
-        asha = screening.asha_worker
-        if asha:
-            asha.commission_balance = float(asha.commission_balance or 0) + 20.0
 
     db.session.commit()
     return success(

@@ -14,7 +14,6 @@ import type {RootStackParamList} from '../navigation/RootNavigator';
 import {logoutToRoleSelect} from '../navigation/navigationUtils';
 import type {PatientProfile, ScreeningRecord} from '../types/app';
 import {
-  COMMISSION_INR_PER_SCREENING,
   getAshaStats,
   getSession,
   listAshaPatients,
@@ -30,7 +29,6 @@ export default function AshaHome({navigation}: {navigation: Nav}) {
   const [stats, setStats] = useState({
     patientCount: 0,
     screeningCount: 0,
-    totalCommissionINR: 0,
   });
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [screenings, setScreenings] = useState<ScreeningRecord[]>([]);
@@ -111,23 +109,9 @@ export default function AshaHome({navigation}: {navigation: Nav}) {
             <Text style={styles.statNum}>{stats.screeningCount}</Text>
             <Text style={styles.statLabel}>Screenings</Text>
           </View>
-          <View style={[styles.statCard, styles.statAccent]}>
-            <Text style={styles.statNum}>₹{stats.totalCommissionINR}</Text>
-            <Text style={styles.statLabel}>Commission*</Text>
-          </View>
         </View>
-        <Text style={styles.commHint}>
-          *On-device demo accrual: ₹{COMMISSION_INR_PER_SCREENING} per screening. Server ledger uses{' '}
-          <Text style={{fontWeight: '800'}}>GET /asha/commissions</Text> (see Commission dashboard).
-        </Text>
 
         <View style={styles.quickRow}>
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => navigation.navigate('AshaCommissionDashboard')}>
-            <Text style={styles.quickTitle}>Commission dashboard</Text>
-            <Text style={styles.quickSub}>A15 · this month</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickCard}
             onPress={() => navigation.navigate('AshaOfflineQueue')}>
@@ -135,14 +119,6 @@ export default function AshaHome({navigation}: {navigation: Nav}) {
             <Text style={styles.quickSub}>A16 · {pendingQueue} pending</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.enrollCard}
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('AshaEnrollMonitoring', {})}>
-          <Text style={styles.enrollTitle}>Commercial subscription (A10)</Text>
-          <Text style={styles.enrollSub}>Guide patient to paid monitoring tiers</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.9}
@@ -216,16 +192,6 @@ export default function AshaHome({navigation}: {navigation: Nav}) {
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={() =>
-                    navigation.navigate('AshaEnrollMonitoring', {
-                      patientId: item.id,
-                      patientName: item.fullName,
-                    })
-                  }>
-                  <Text style={styles.commercialLink}>Commercial care (A10)</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() =>
                     navigation.navigate('PatientRegistration', {
                       flow: 'asha_edit',
                       ashaPatientId: item.id,
@@ -251,7 +217,6 @@ export default function AshaHome({navigation}: {navigation: Nav}) {
                   {s.followUp ? 'Follow-up' : 'New visit'} · Risk {s.riskLevel}
                 </Text>
               </View>
-              <Text style={styles.actRupee}>+₹{COMMISSION_INR_PER_SCREENING}</Text>
             </View>
           ))
         )}
@@ -290,19 +255,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148,163,184,0.18)',
   },
-  statAccent: {
-    borderColor: 'rgba(34,197,94,0.35)',
-    backgroundColor: 'rgba(34,197,94,0.08)',
-  },
   statNum: {fontSize: 20, fontWeight: '900', color: '#F8FAFC'},
   statLabel: {marginTop: 4, fontSize: 12, color: 'rgba(248,250,252,0.65)'},
-  commHint: {
-    marginTop: 8,
-    marginBottom: 12,
-    fontSize: 11,
-    color: 'rgba(148,163,184,0.85)',
-    lineHeight: 15,
-  },
   registerBtn: {
     borderRadius: 16,
     padding: 16,
@@ -381,7 +335,6 @@ const styles = StyleSheet.create({
   },
   actTitle: {fontWeight: '800', color: '#F8FAFC'},
   actSub: {marginTop: 4, fontSize: 12, color: 'rgba(248,250,252,0.6)'},
-  actRupee: {fontWeight: '900', color: '#86EFAC'},
   quickRow: {flexDirection: 'row', gap: 10, marginBottom: 12},
   quickCard: {
     flex: 1,
@@ -393,14 +346,4 @@ const styles = StyleSheet.create({
   },
   quickTitle: {color: '#F8FAFC', fontWeight: '900', fontSize: 14},
   quickSub: {marginTop: 4, fontSize: 11, color: 'rgba(248,250,252,0.65)'},
-  enrollCard: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 18,
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.35)',
-  },
-  enrollTitle: {color: '#F8FAFC', fontWeight: '900', fontSize: 15},
-  enrollSub: {marginTop: 6, fontSize: 12, color: 'rgba(248,250,252,0.72)'},
 });
