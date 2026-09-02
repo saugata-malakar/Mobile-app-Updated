@@ -1,0 +1,232 @@
+{
+  "evaluation_date": "2026-06-10T11:24:35.142614",
+  "model_path": "C:\\Users\\trina\\Downloads\\SNST PROF KGP\\diabetescare-ai\\models\\wound_severity_best.pth",
+  "test_set_size": 159,
+  "classes_in_data": [
+    0,
+    1
+  ],
+  "overall": {
+    "accuracy": "0.950 [0.904, 0.974]",
+    "macro_f1": 0.9527,
+    "weighted_f1": 0.9527,
+    "cohens_kappa": 0.9,
+    "macro_auroc": 0.9908,
+    "n_test": 159,
+    "classes_in_data": [
+      0,
+      1
+    ]
+  },
+  "per_class": {
+    "0": {
+      "class_name": "Grade 0 (Normal)",
+      "n_actual": 80,
+      "tp": 77,
+      "tn": 74,
+      "fp": 5,
+      "fn": 3,
+      "sensitivity": "0.963 [0.895, 0.987]",
+      "specificity": "0.937 [0.860, 0.973]",
+      "ppv": "0.939 [0.865, 0.974]",
+      "npv": "0.961 [0.892, 0.987]",
+      "auroc": "0.988 [0.970, 1.000]",
+      "present_in_data": true
+    },
+    "1": {
+      "class_name": "Grade 1 (Superficial Ulcer)",
+      "n_actual": 79,
+      "tp": 74,
+      "tn": 78,
+      "fp": 2,
+      "fn": 5,
+      "sensitivity": "0.937 [0.860, 0.973]",
+      "specificity": "0.975 [0.913, 0.993]",
+      "ppv": "0.974 [0.909, 0.993]",
+      "npv": "0.940 [0.867, 0.974]",
+      "auroc": "0.991 [0.976, 1.000]",
+      "present_in_data": true
+    },
+    "2": {
+      "class_name": "Grade 2 (Deep)",
+      "n_actual": 0,
+      "tp": 0,
+      "tn": 159,
+      "fp": 0,
+      "fn": 0,
+      "sensitivity": "0.000 [0.000, 0.000]",
+      "specificity": "1.000 [0.976, 1.000]",
+      "ppv": "0.000 [0.000, 0.000]",
+      "npv": "1.000 [0.976, 1.000]",
+      "auroc": "N/A",
+      "present_in_data": false
+    },
+    "3": {
+      "class_name": "Grade 3 (Abscess)",
+      "n_actual": 0,
+      "tp": 0,
+      "tn": 158,
+      "fp": 1,
+      "fn": 0,
+      "sensitivity": "0.000 [0.000, 0.000]",
+      "specificity": "0.994 [0.965, 0.999]",
+      "ppv": "0.000 [0.000, 0.793]",
+      "npv": "1.000 [0.976, 1.000]",
+      "auroc": "N/A",
+      "present_in_data": false
+    },
+    "4": {
+      "class_name": "Grade 4 (Localized Gangrene)",
+      "n_actual": 0,
+      "tp": 0,
+      "tn": 159,
+      "fp": 0,
+      "fn": 0,
+      "sensitivity": "0.000 [0.000, 0.000]",
+      "specificity": "1.000 [0.976, 1.000]",
+      "ppv": "0.000 [0.000, 0.000]",
+      "npv": "1.000 [0.976, 1.000]",
+      "auroc": "N/A",
+      "present_in_data": false
+    },
+    "5": {
+      "class_name": "Grade 5 (Extensive Gangrene)",
+      "n_actual": 0,
+      "tp": 0,
+      "tn": 159,
+      "fp": 0,
+      "fn": 0,
+      "sensitivity": "0.000 [0.000, 0.000]",
+      "specificity": "1.000 [0.976, 1.000]",
+      "ppv": "0.000 [0.000, 0.000]",
+      "npv": "1.000 [0.976, 1.000]",
+      "auroc": "N/A",
+      "present_in_data": false
+    }
+  },
+  "inference_stats": {
+    "mean_ms": 33.44,
+    "std_ms": 10.99,
+    "min_ms": 24.2,
+    "max_ms": 107.34
+  },
+  "calibration": {
+    "ece": 0.04177203773584907,
+    "mce": 0.434383,
+    "num_bins": 10,
+    "trend": "Generally overconfident (confidence exceeds empirical accuracy)",
+    "high_confidence_calibration": "Overconfident in high-certainty zone (gap: -3.2%)",
+    "bin_details": [
+      {
+        "bin_idx": 0,
+        "bin_range": [
+          0.0,
+          0.1
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 1,
+        "bin_range": [
+          0.1,
+          0.2
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 2,
+        "bin_range": [
+          0.2,
+          0.30000000000000004
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 3,
+        "bin_range": [
+          0.30000000000000004,
+          0.4
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 4,
+        "bin_range": [
+          0.4,
+          0.5
+        ],
+        "count": 1,
+        "accuracy": 0.0,
+        "confidence": 0.434383,
+        "gap": 0.434383
+      },
+      {
+        "bin_idx": 5,
+        "bin_range": [
+          0.5,
+          0.6000000000000001
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 6,
+        "bin_range": [
+          0.6000000000000001,
+          0.7000000000000001
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 7,
+        "bin_range": [
+          0.7000000000000001,
+          0.8
+        ],
+        "count": 3,
+        "accuracy": 0.3333333333333333,
+        "confidence": 0.765608,
+        "gap": 0.43227466666666664
+      },
+      {
+        "bin_idx": 8,
+        "bin_range": [
+          0.8,
+          0.9
+        ],
+        "count": 0,
+        "accuracy": 0.0,
+        "confidence": 0.0,
+        "gap": 0.0
+      },
+      {
+        "bin_idx": 9,
+        "bin_range": [
+          0.9,
+          1.0
+        ],
+        "count": 155,
+        "accuracy": 0.967741935483871,
+        "confidence": 0.9994228838709678,
+        "gap": 0.031680948387096786
+      }
+    ]
+  }
+}

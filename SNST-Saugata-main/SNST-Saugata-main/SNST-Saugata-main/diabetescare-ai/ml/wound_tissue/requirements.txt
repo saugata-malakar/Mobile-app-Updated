@@ -1,0 +1,20 @@
+# Wound Tissue Classification Dependencies
+# Week 3 - Sharif's Implementation
+
+# Core dependencies (already in main requirements.txt)
+torch>=2.1.0
+torchvision>=0.16.0
+numpy>=1.24.0
+Pillow>=10.0.0
+tqdm>=4.66.0
+
+# Optional: For ONNX export
+onnx>=1.15.0
+onnxruntime>=1.16.0
+
+# Optional: For TFLite export
+# tensorflow>=2.13.0
+# tf2onnx>=1.15.0
+
+# Weights & Biases (optional for logging)
+# wandb>=0.16.0

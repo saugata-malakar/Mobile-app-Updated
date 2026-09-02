@@ -1,0 +1,728 @@
+{
+  "test_date": "2026-06-07T17:00:58.322673",
+  "total_cases": 20,
+  "successful": 20,
+  "failed": 0,
+  "results": [
+    {
+      "case_id": 1,
+      "patient_id": "TEST_001",
+      "clinical_data": {
+        "hba1c": 6.5,
+        "diabetes_duration": 3,
+        "blood_pressure": "120/80",
+        "age": 45,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 6.5% indicates adequate glycemic control",
+          "Diabetes duration of 3 years presents moderate complication risk",
+          "Blood pressure 120/80 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.276284"
+    },
+    {
+      "case_id": 2,
+      "patient_id": "TEST_002",
+      "clinical_data": {
+        "hba1c": 6.8,
+        "diabetes_duration": 5,
+        "blood_pressure": "125/82",
+        "age": 52,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 6.8% indicates adequate glycemic control",
+          "Diabetes duration of 5 years presents moderate complication risk",
+          "Blood pressure 125/82 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.279383"
+    },
+    {
+      "case_id": 3,
+      "patient_id": "TEST_003",
+      "clinical_data": {
+        "hba1c": 7.0,
+        "diabetes_duration": 4,
+        "blood_pressure": "118/78",
+        "age": 48,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 7.0% indicates adequate glycemic control",
+          "Diabetes duration of 4 years presents moderate complication risk",
+          "Blood pressure 118/78 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.282829"
+    },
+    {
+      "case_id": 4,
+      "patient_id": "TEST_004",
+      "clinical_data": {
+        "hba1c": 6.9,
+        "diabetes_duration": 6,
+        "blood_pressure": "130/85",
+        "age": 55,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 6.9% indicates adequate glycemic control",
+          "Diabetes duration of 6 years presents moderate complication risk",
+          "Blood pressure 130/85 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.284986"
+    },
+    {
+      "case_id": 5,
+      "patient_id": "TEST_005",
+      "clinical_data": {
+        "hba1c": 7.1,
+        "diabetes_duration": 7,
+        "blood_pressure": "128/83",
+        "age": 50,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 7.1% indicates adequate glycemic control",
+          "Diabetes duration of 7 years presents moderate complication risk",
+          "Blood pressure 128/83 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.287203"
+    },
+    {
+      "case_id": 6,
+      "patient_id": "TEST_006",
+      "clinical_data": {
+        "hba1c": 8.2,
+        "diabetes_duration": 8,
+        "blood_pressure": "135/88",
+        "age": 58,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 8.2% indicates adequate glycemic control",
+          "Diabetes duration of 8 years presents moderate complication risk",
+          "Blood pressure 135/88 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.289771"
+    },
+    {
+      "case_id": 7,
+      "patient_id": "TEST_007",
+      "clinical_data": {
+        "hba1c": 8.5,
+        "diabetes_duration": 10,
+        "blood_pressure": "140/90",
+        "age": 60,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 8.5% indicates adequate glycemic control",
+          "Diabetes duration of 10 years presents moderate complication risk",
+          "Blood pressure 140/90 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.291831"
+    },
+    {
+      "case_id": 8,
+      "patient_id": "TEST_008",
+      "clinical_data": {
+        "hba1c": 8.0,
+        "diabetes_duration": 9,
+        "blood_pressure": "138/89",
+        "age": 56,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 8.0% indicates adequate glycemic control",
+          "Diabetes duration of 9 years presents moderate complication risk",
+          "Blood pressure 138/89 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.293903"
+    },
+    {
+      "case_id": 9,
+      "patient_id": "TEST_009",
+      "clinical_data": {
+        "hba1c": 8.3,
+        "diabetes_duration": 11,
+        "blood_pressure": "142/91",
+        "age": 62,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 8.3% indicates adequate glycemic control",
+          "Diabetes duration of 11 years increases complication risk",
+          "Blood pressure 142/91 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.297522"
+    },
+    {
+      "case_id": 10,
+      "patient_id": "TEST_010",
+      "clinical_data": {
+        "hba1c": 8.1,
+        "diabetes_duration": 7,
+        "blood_pressure": "136/87",
+        "age": 54,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 1,
+        "severity_label": "Grade 1 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "low",
+        "healing_prognosis": "good",
+        "clinical_insights": [
+          "HbA1c of 8.1% indicates adequate glycemic control",
+          "Diabetes duration of 7 years presents moderate complication risk",
+          "Blood pressure 136/87 suggests adequate vascular health"
+        ],
+        "risk_factors": [
+          "Diabetes duration",
+          "Peripheral neuropathy risk"
+        ],
+        "immediate_actions": [
+          "Continue current management",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 14,
+        "specialist_referral": false
+      },
+      "timestamp": "2026-06-07T11:30:58.300841"
+    },
+    {
+      "case_id": 11,
+      "patient_id": "TEST_011",
+      "clinical_data": {
+        "hba1c": 9.5,
+        "diabetes_duration": 12,
+        "blood_pressure": "150/95",
+        "age": 65,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 9.5% indicates poor glycemic control",
+          "Diabetes duration of 12 years increases complication risk",
+          "Blood pressure 150/95 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.302834"
+    },
+    {
+      "case_id": 12,
+      "patient_id": "TEST_012",
+      "clinical_data": {
+        "hba1c": 10.2,
+        "diabetes_duration": 15,
+        "blood_pressure": "155/98",
+        "age": 68,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 10.2% indicates poor glycemic control",
+          "Diabetes duration of 15 years increases complication risk",
+          "Blood pressure 155/98 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.304833"
+    },
+    {
+      "case_id": 13,
+      "patient_id": "TEST_013",
+      "clinical_data": {
+        "hba1c": 9.8,
+        "diabetes_duration": 14,
+        "blood_pressure": "148/94",
+        "age": 64,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 9.8% indicates poor glycemic control",
+          "Diabetes duration of 14 years increases complication risk",
+          "Blood pressure 148/94 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.307572"
+    },
+    {
+      "case_id": 14,
+      "patient_id": "TEST_014",
+      "clinical_data": {
+        "hba1c": 11.0,
+        "diabetes_duration": 18,
+        "blood_pressure": "160/100",
+        "age": 70,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 11.0% indicates poor glycemic control",
+          "Diabetes duration of 18 years increases complication risk",
+          "Blood pressure 160/100 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.309364"
+    },
+    {
+      "case_id": 15,
+      "patient_id": "TEST_015",
+      "clinical_data": {
+        "hba1c": 9.3,
+        "diabetes_duration": 13,
+        "blood_pressure": "145/92",
+        "age": 63,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 9.3% indicates poor glycemic control",
+          "Diabetes duration of 13 years increases complication risk",
+          "Blood pressure 145/92 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.310411"
+    },
+    {
+      "case_id": 16,
+      "patient_id": "TEST_016",
+      "clinical_data": {
+        "hba1c": 12.5,
+        "diabetes_duration": 20,
+        "blood_pressure": "165/105",
+        "age": 72,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 12.5% indicates poor glycemic control",
+          "Diabetes duration of 20 years increases complication risk",
+          "Blood pressure 165/105 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.313527"
+    },
+    {
+      "case_id": 17,
+      "patient_id": "TEST_017",
+      "clinical_data": {
+        "hba1c": 11.8,
+        "diabetes_duration": 22,
+        "blood_pressure": "170/108",
+        "age": 75,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 11.8% indicates poor glycemic control",
+          "Diabetes duration of 22 years increases complication risk",
+          "Blood pressure 170/108 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.316293"
+    },
+    {
+      "case_id": 18,
+      "patient_id": "TEST_018",
+      "clinical_data": {
+        "hba1c": 13.0,
+        "diabetes_duration": 25,
+        "blood_pressure": "175/110",
+        "age": 78,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 13.0% indicates poor glycemic control",
+          "Diabetes duration of 25 years increases complication risk",
+          "Blood pressure 175/110 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.318422"
+    },
+    {
+      "case_id": 19,
+      "patient_id": "TEST_019",
+      "clinical_data": {
+        "hba1c": 12.0,
+        "diabetes_duration": 19,
+        "blood_pressure": "168/106",
+        "age": 73,
+        "gender": "M"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 12.0% indicates poor glycemic control",
+          "Diabetes duration of 19 years increases complication risk",
+          "Blood pressure 168/106 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.320585"
+    },
+    {
+      "case_id": 20,
+      "patient_id": "TEST_020",
+      "clinical_data": {
+        "hba1c": 11.5,
+        "diabetes_duration": 21,
+        "blood_pressure": "162/104",
+        "age": 71,
+        "gender": "F"
+      },
+      "analysis": {
+        "severity_grade": 3,
+        "severity_label": "Grade 3 (Mock Assessment)",
+        "confidence": 0.75,
+        "tissue_assessment": "Mixed granulation and slough tissue observed (mock)",
+        "infection_risk": "high",
+        "healing_prognosis": "poor",
+        "clinical_insights": [
+          "HbA1c of 11.5% indicates poor glycemic control",
+          "Diabetes duration of 21 years increases complication risk",
+          "Blood pressure 162/104 suggests impaired vascular health"
+        ],
+        "risk_factors": [
+          "Elevated HbA1c",
+          "High blood pressure"
+        ],
+        "immediate_actions": [
+          "Improve glycemic control",
+          "Wound debridement if slough present",
+          "Monitor for infection signs"
+        ],
+        "follow_up_days": 3,
+        "specialist_referral": true
+      },
+      "timestamp": "2026-06-07T11:30:58.322148"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "relevance_count": 20,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "id": 1,
+      "question": "What is diabetic neuropathy?",
+      "answer": "According to the ASHA Training Manual: \u007f Diabetic Neuropathy: Nerve damage reduces sensation in the feet.",
+      "status": "PASS"
+    },
+    {
+      "id": 2,
+      "question": "What causes diabetic foot ulcers?",
+      "answer": "According to the ASHA Training Manual: Section 1: Understanding Diabetic Foot Ulcers.",
+      "status": "PASS"
+    },
+    {
+      "id": 3,
+      "question": "What is Wagner Grade 0?",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 0: Pre-ulcerative lesion.",
+      "status": "PASS"
+    },
+    {
+      "id": 4,
+      "question": "Describe Wagner Grade 1.",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 1: Superficial ulcer.",
+      "status": "PASS"
+    },
+    {
+      "id": 5,
+      "question": "What is Wagner Grade 2?",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 2: Deep ulcer.",
+      "status": "PASS"
+    },
+    {
+      "id": 6,
+      "question": "Explain Wagner Grade 3.",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 3: Deep ulcer with osteomyelitis or joint infection.",
+      "status": "PASS"
+    },
+    {
+      "id": 7,
+      "question": "What is Wagner Grade 4?",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 4: Localized gangrene.",
+      "status": "PASS"
+    },
+    {
+      "id": 8,
+      "question": "What is Wagner Grade 5?",
+      "answer": "According to the ASHA Training Manual: \u007f Wagner Grade 5: Extensive gangrene.",
+      "status": "PASS"
+    },
+    {
+      "id": 9,
+      "question": "How far should the camera be from the foot?",
+      "answer": "According to the ASHA Training Manual: \u007f Camera Distance: Keep the camera exactly 15 to 20 centimeters away from the foot.",
+      "status": "PASS"
+    },
+    {
+      "id": 10,
+      "question": "What are the rules for lighting in foot photography?",
+      "answer": "According to the ASHA Training Manual: Section 3: Standardized Wound Photography.",
+      "status": "PASS"
+    },
+    {
+      "id": 11,
+      "question": "At what angle should I hold the phone when taking pictures?",
+      "answer": "According to the ASHA Training Manual: \u007f Camera Angle: Hold the phone parallel to the wound surface (90-degree perpendicular angle)..",
+      "status": "PASS"
+    },
+    {
+      "id": 12,
+      "question": "Why do we place a coin next to the wound?",
+      "answer": "According to the ASHA Training Manual: \u007f Scale Reference Coin: Place a standard Indian 5-Rupee coin (diameter: 23mm) or 10-Rupee.",
+      "status": "PASS"
+    },
+    {
+      "id": 13,
+      "question": "What coin sizes are supported for scale reference?",
+      "answer": "According to the ASHA Training Manual: \u007f Scale Reference Coin: Place a standard Indian 5-Rupee coin (diameter: 23mm) or 10-Rupee.",
+      "status": "PASS"
+    },
+    {
+      "id": 14,
+      "question": "What are the red flags for urgent referral?",
+      "answer": "According to the ASHA Training Manual: Section 4: Referral Guidelines and Clinical Red Flags.",
+      "status": "PASS"
+    },
+    {
+      "id": 15,
+      "question": "What is Red Flag 1 regarding spreading redness?",
+      "answer": "According to the ASHA Training Manual: \u007f Red Flag 1 - Rapidly Spreading Erythema: Redness spreading outward from the wound.",
+      "status": "PASS"
+    },
+    {
+      "id": 16,
+      "question": "What temperature indicates a high fever?",
+      "answer": "According to the ASHA Training Manual: \u007f Red Flag 2 - Systemic Symptoms: High fever (body temperature exceeding 38 degrees.",
+      "status": "PASS"
+    },
+    {
+      "id": 17,
+      "question": "What does black or brown tissue on a wound mean?",
+      "answer": "According to the ASHA Training Manual: \u007f Red Flag 3 - Necrotic Tissue: Any black (eschar) or dark brown tissue, or greyish slough,.",
+      "status": "PASS"
+    },
+    {
+      "id": 18,
+      "question": "What does a foul odor from the wound indicate?",
+      "answer": "According to the ASHA Training Manual: \u007f Red Flag 4 - Foul Odor: A strong, putrid, or sweet smell coming from the wound, which.",
+      "status": "PASS"
+    },
+    {
+      "id": 19,
+      "question": "What is crepitus?",
+      "answer": "According to the ASHA Training Manual: \u007f Red Flag 5 - Crepitus: A crackling sensation when pressing the skin around the wound,.",
+      "status": "PASS"
+    },
+    {
+      "id": 20,
+      "question": "What is the referral SLA for Grade 2 wounds?",
+      "answer": "According to the ASHA Training Manual: Referral SLA: Refer all Grade 2 and higher wounds within 24 hours.",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiabetesCare AI - Advanced Wound Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-heartbeat"></i>
+                <span>DiabetesCare AI</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#analyze" class="nav-link">Analyze</a></li>
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Advanced AI-Powered<br>
+                    <span class="gradient-text">Diabetic Wound Analysis</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Instant, accurate wound severity assessment using cutting-edge deep learning technology.
+                    Upload an image and get results in seconds.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#analyze" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Start Analysis
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        <i class="fas fa-info-circle"></i> Learn More
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">98.10%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">&lt;2s</div>
+                        <div class="stat-label">Analysis Time</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">1000+</div>
+                        <div class="stat-label">Images Analyzed</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="floating-card">
+                    <i class="fas fa-brain"></i>
+                    <h3>AI-Powered</h3>
+                    <p>Deep Learning Model</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Choose DiabetesCare AI?</h2>
+                <p>Advanced features designed for healthcare professionals and patients</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Lightning Fast</h3>
+                    <p>Get instant wound analysis results in under 2 seconds with our optimized AI model.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Highly Accurate</h3>
+                    <p>98.10% validation accuracy ensures reliable wound severity classification.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Secure & Private</h3>
+                    <p>Your medical data is encrypted and never stored on our servers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Detailed Reports</h3>
+                    <p>Comprehensive analysis with confidence scores and recommendations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Friendly</h3>
+                    <p>Access from any device - desktop, tablet, or smartphone.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3>Analysis History</h3>
+                    <p>Track wound progression over time with saved analysis results.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Section -->
+    <section id="analyze" class="analyze">
+        <div class="container">
+            <div class="section-header">
+                <h2>Analyze Wound Image</h2>
+                <p>Upload a clear image of the diabetic foot wound for instant AI analysis</p>
+            </div>
+            
+            <div class="analysis-container">
+                <!-- Upload Area -->
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drop image here or click to upload</h3>
+                            <p>Supports: JPG, PNG, JPEG (Max 10MB)</p>
+                            <input type="file" id="fileInput" accept="image/*" hidden>
+                            <button class="btn btn-primary" id="selectFileBtn">
+                                <i class="fas fa-folder-open"></i> Select Image
+                            </button>
+                        </div>
+                        <div class="preview-container" id="previewContainer" style="display: none;">
+                            <img id="previewImage" src="" alt="Preview">
+                            <button class="btn-remove" id="removeImageBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success btn-analyze" id="analyzeBtn" disabled>
+                        <i class="fas fa-microscope"></i> Analyze Wound
+                    </button>
+                </div>
+
+                <!-- Results Area -->
+                <div class="results-section" id="resultsSection" style="display: none;">
+                    <div class="results-header">
+                        <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                        <button class="btn btn-sm btn-secondary" id="downloadReportBtn">
+                            <i class="fas fa-download"></i> Download Report
+                        </button>
+                    </div>
+
+                    <div class="result-card main-result">
+                        <div class="result-label">Classification</div>
+                        <div class="result-value" id="classificationResult">-</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill"></div>
+                        </div>
+                        <div class="confidence-text">
+                            Confidence: <span id="confidenceValue">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <div class="detail-label">Processing Time</div>
+                                <div class="detail-value" id="processingTime">-</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-image"></i>
+                            <div>
+                                <div class="detail-label">Image Size</div>
+                                <div class="detail-value" id="imageSize">-</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-calendar"></i>
+                            <div>
+                                <div class="detail-label">Analysis Date</div>
+                                <div class="detail-value" id="analysisDate">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendations" id="recommendations">
+                        <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                        <ul id="recommendationsList"></ul>
+                    </div>
+
+                    <div class="all-predictions" id="allPredictions">
+                        <h4><i class="fas fa-list"></i> All Class Probabilities</h4>
+                        <div id="predictionsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>About DiabetesCare AI</h2>
+                    <p>
+                        DiabetesCare AI is an advanced medical imaging platform that leverages state-of-the-art 
+                        deep learning technology to assist healthcare professionals in assessing diabetic foot wounds.
+                    </p>
+                    <p>
+                        Our EfficientNet-B0 based model has been trained on over 1,000 medical images and achieves 
+                        98.10% validation accuracy, making it a reliable tool for preliminary wound assessment.
+                    </p>
+                    <div class="tech-stack">
+                        <h3>Technology Stack</h3>
+                        <div class="tech-badges">
+                            <span class="badge"><i class="fab fa-python"></i> Python</span>
+                            <span class="badge"><i class="fas fa-brain"></i> PyTorch</span>
+                            <span class="badge"><i class="fas fa-server"></i> FastAPI</span>
+                            <span class="badge"><i class="fab fa-js"></i> JavaScript</span>
+                            <span class="badge"><i class="fas fa-database"></i> PostgreSQL</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="stats-card">
+                        <div class="stat-item">
+                            <div class="stat-number">98.10%</div>
+                            <div class="stat-text">Model Accuracy</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">1,055</div>
+                            <div class="stat-text">Training Images</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">20</div>
+                            <div class="stat-text">Training Epochs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Get In Touch</h2>
+                <p>Have questions? We'd love to hear from you.</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h4>Email</h4>
+                            <p>support@diabetescareai.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h4>Phone</h4>
+                            <p>+1 (555) 123-4567</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h4>Address</h4>
+                            <p>123 Medical AI Street, Tech City, TC 12345</p>
+                        </div>
+                    </div>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <input type="text" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" placeholder="Your Email" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="Your Message" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-heartbeat"></i> DiabetesCare AI</h3>
+                    <p>Advanced AI-powered wound analysis for better healthcare outcomes.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#analyze">Analyze</a></li>
+                        <li><a href="#about">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Newsletter</h4>
+                    <p>Stay updated with our latest features</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="Enter your email">
+                        <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 DiabetesCare AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Analyzing image...</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

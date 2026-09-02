@@ -27,6 +27,7 @@ export default function Layout({ doctor, children }) {
     navItems = [
       { to: '/admin-overview', label: 'Hospital Operations', icon: '🏥' },
       { to: '/department', label: 'Department Triage', icon: '⚡' },
+      { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
       { to: '/asha', label: 'ASHA Field Workforce', icon: '👩‍⚕️' },
       { to: '/dpdp', label: 'DPDP Statutory Audit', icon: '🛡️' },
       { to: '/analytics', label: 'Informatics & KPIs', icon: '📊' },
@@ -38,6 +39,7 @@ export default function Layout({ doctor, children }) {
     navItems = [
       { to: '/patient-portal', label: 'My Healing Journey', icon: '🩹' },
       { to: '/teleconsults', label: 'Join Govt Teleconsult', icon: '📹' },
+      { to: '/mobile-simulator', label: 'Mobile Camera Capture Flow', icon: '📱' },
       { to: '/patients/PAT_KGP_01', label: 'Full Wound Trajectory', icon: '📈' },
       { to: '/settings', label: 'My Care Preferences', icon: '⚙️' },
     ];
@@ -45,6 +47,7 @@ export default function Layout({ doctor, children }) {
     // Doctor (default)
     navItems = [
       { to: '/', label: 'Clinical Triage Queue', icon: '⚡' },
+      { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
       { to: '/patients/PAT_KGP_01', label: 'Wound Trajectory & Overrides', icon: '🩹' },
       { to: '/teleconsults', label: 'National Teleconsult (eSanjeevani)', icon: '📹' },
       { to: '/department', label: 'Department Registry', icon: '🏥' },
@@ -60,48 +63,45 @@ export default function Layout({ doctor, children }) {
       {/* Sidebar */}
       <aside
         className={`${
-          collapsed ? 'w-16' : 'w-64'
-        } bg-[#0E1734] border-r border-[#1D2B52] transition-all duration-200 flex flex-col justify-between fixed inset-y-0 left-0 z-30 shadow-lg`}
+          collapsed ? 'w-20' : 'w-64'
+        } bg-[#0E1736] border-r border-[#1D2B52] transition-all duration-200 flex flex-col justify-between shrink-0 select-none z-20`}
       >
         <div>
-          {/* Header */}
-          <div className="h-14 flex items-center justify-between px-3.5 border-b border-[#1D2B52]">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                DC
-              </div>
-              {!collapsed && (
-                <div>
-                  <h1 className="font-bold text-xs text-white leading-tight">
-                    DiabetesCare AI
-                  </h1>
-                  <span className="text-[10px] text-blue-400 font-medium tracking-wide uppercase">
-                    {currentRole === 'patient' ? 'Patient Health Portal' : currentRole === 'hospital_admin' ? 'Hospital Admin Suite' : 'Clinical Workstation'}
-                  </span>
+          {/* Institution Brand */}
+          <div className="p-4 border-b border-[#1D2B52] flex items-center justify-between">
+            {!collapsed ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                  <h1 className="font-bold text-sm tracking-tight text-white">DiabetesCare AI</h1>
                 </div>
-              )}
-            </div>
+                <p className="text-[10px] text-slate-400 mt-0.5 font-medium">IIT Kharagpur & MMCH</p>
+              </div>
+            ) : (
+              <span className="mx-auto font-black text-blue-400 text-lg">DC</span>
+            )}
             <button
+              type="button"
               onClick={() => setCollapsed(!collapsed)}
-              className="text-slate-400 hover:text-white p-1 rounded hover:bg-[#1A2C56] transition-colors text-xs"
-              title={collapsed ? 'Expand' : 'Collapse'}
+              className="text-slate-400 hover:text-white p-1 rounded hover:bg-[#1A284D] text-xs"
+              title="Toggle sidebar"
             >
               {collapsed ? '▶' : '◀'}
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-2.5 space-y-1 overflow-y-auto">
+          <nav className="p-2 space-y-1">
             {navItems.map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                     active
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-[#17244B]'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-300 hover:bg-[#162347] hover:text-white'
                   }`}
                   title={collapsed ? item.label : undefined}
                 >
@@ -113,69 +113,67 @@ export default function Layout({ doctor, children }) {
           </nav>
         </div>
 
-        {/* User Profile Footer */}
-        <div className="p-2.5 border-t border-[#1D2B52] bg-[#0A122A]">
-          <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#142144] border border-[#23355E]">
-            <div className="w-7 h-7 rounded bg-blue-700 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-              {currentRole === 'patient' ? 'PT' : currentRole === 'hospital_admin' ? 'HA' : 'DR'}
-            </div>
-            {!collapsed && (
-              <div className="overflow-hidden flex-1">
-                <p className="text-xs font-bold text-white truncate">{roleTitle}</p>
-                <p className="text-[10px] text-slate-400 truncate">{roleBadge}</p>
+        {/* User Card & Logout */}
+        <div className="p-3 border-t border-[#1D2B52] bg-[#0A1128]">
+          {!collapsed ? (
+            <div>
+              <div className="mb-2.5">
+                <p className="text-xs font-bold text-white truncate">{doctor?.name || roleTitle}</p>
+                <p className="text-[10px] text-slate-400 truncate">{doctor?.specialisation || roleBadge}</p>
               </div>
-            )}
-          </div>
-          <button
-            onClick={logout}
-            className="w-full mt-2 py-1.5 px-2 rounded-md bg-slate-800 hover:bg-red-950/40 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-800 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
-          >
-            <span>🚪</span>
-            {!collapsed && <span>Switch Portal / Sign Out</span>}
-          </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="w-full py-1.5 px-2.5 rounded bg-[#162347] hover:bg-rose-900/40 hover:text-rose-300 text-slate-300 font-semibold text-xs border border-[#23355E] transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>🚪</span> Sign Out
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full py-2 text-slate-400 hover:text-rose-300 text-sm flex justify-center"
+              title="Sign Out"
+            >
+              🚪
+            </button>
+          )}
         </div>
       </aside>
 
-      {/* Main Viewport */}
-      <div className={`flex-1 flex flex-col transition-all duration-200 ${collapsed ? 'ml-16' : 'ml-64'}`}>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-14 bg-[#0E1734] border-b border-[#1D2B52] px-6 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3 w-72">
-            <div className="relative w-full">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-500 text-xs">
-                🔍
-              </span>
-              <input
-                type="text"
-                placeholder="Search MRN, records, or emergency helpline..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-7 pr-3 py-1 bg-[#091024] border border-[#22335A] rounded-md text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
+        <header className="h-14 bg-[#0E1736] border-b border-[#1D2B52] px-6 flex items-center justify-between shrink-0 select-none">
+          <div className="flex items-center gap-3">
+            <span className="px-2.5 py-1 rounded bg-[#16254A] border border-[#253966] text-blue-300 text-xs font-semibold">
+              {roleTitle}
+            </span>
+            <span className="text-slate-500 text-xs hidden sm:inline">|</span>
+            <span className="text-slate-400 text-xs hidden sm:inline">
+              Midnapore Apex Hub · Node #01
+            </span>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-medium">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-blue-950/50 border border-blue-700/50 text-blue-300 text-[11px]">
-              <span>🏛️</span>
-              <span className="font-semibold">NHA ABDM Certified</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-700/40 text-emerald-400 text-[11px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              OpenCV Ingestion Active
+          <div className="flex items-center gap-4">
+            <Link
+              to="/mobile-simulator"
+              className="px-3 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 font-bold text-xs flex items-center gap-1.5 transition-colors"
+            >
+              <span>📱</span> Launch Mobile Simulator
+            </Link>
+            <div className="flex items-center gap-2 text-xs text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>FastAPI Port 8000</span>
             </div>
           </div>
         </header>
 
-        {/* Content Viewport */}
-        <main className="flex-1 p-6 overflow-y-auto bg-[#0B132B]">
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#0B132B]">
           {children}
         </main>
-
-        {/* Footer */}
-        <footer className="py-2.5 px-6 text-center text-[11px] text-slate-500 border-t border-[#1D2B52] bg-[#0E1734]">
-          National Telemedicine & Ulcer Segmentation Workstation · IIT Kharagpur · 24x7 Emergency: Dial 112 / 108 / 104
-        </footer>
       </div>
     </div>
   );

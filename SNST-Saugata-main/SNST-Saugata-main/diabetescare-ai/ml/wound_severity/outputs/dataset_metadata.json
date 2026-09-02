@@ -1,0 +1,46 @@
+{
+  "total_images": 1055,
+  "train_size": 738,
+  "val_size": 158,
+  "test_size": 159,
+  "train_distribution": {
+    "0": 398,
+    "1": 340
+  },
+  "val_distribution": {
+    "0": 65,
+    "1": 93
+  },
+  "test_distribution": {
+    "0": 80,
+    "1": 79
+  },
+  "class_names": {
+    "0": "Grade 0 (Normal)",
+    "1": "Grade 1 (Superficial)",
+    "2": "Grade 2 (Deep)",
+    "3": "Grade 3 (Abscess)",
+    "4": "Grade 4 (Localized gangrene)",
+    "5": "Grade 5 (Extensive gangrene)"
+  },
+  "augmentation": {
+    "rotation": "\u00b130\u00b0",
+    "brightness": "\u00b120%",
+    "zoom": "0.8-1.2\u00d7",
+    "horizontal_flip": true,
+    "gaussian_noise": "\u03c3=0.01"
+  },
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "image_size": "224\u00d7224"
+}

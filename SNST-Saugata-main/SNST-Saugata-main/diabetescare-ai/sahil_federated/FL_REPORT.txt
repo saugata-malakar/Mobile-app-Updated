@@ -1,0 +1,144 @@
+================================================================================
+          DIABETESCARE AI - WEEK 3 FEDERATED LEARNING PoC REPORT
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+Successfully implemented and executed a Federated Learning Proof-of-Concept
+for wound severity classification using 3 simulated client nodes.
+
+KEY RESULTS:
+- Final FL Accuracy: 98.63%
+- Centralized Baseline: 94.97%
+- Accuracy IMPROVEMENT: +3.66% over centralized baseline!
+- Privacy: No raw patient images left any node
+
+================================================================================
+EXPERIMENT CONFIGURATION
+================================================================================
+
+Parameter                  Value
+-----------------------------------------
+Number of Clients          3
+Federated Rounds           5
+Local Epochs per Round     2
+Batch Size                 32
+Learning Rate              0.001
+Partition Strategy         IID (Independent and Identically Distributed)
+Model Architecture         EfficientNet-B0
+Total Training Samples     1,055 images
+
+CLIENT DATA DISTRIBUTION
+-----------------------------------------
+Client 0: 352 samples (Abnormal: 184, Normal: 168)
+Client 1: 352 samples (Abnormal: 172, Normal: 180)
+Client 2: 351 samples (Abnormal: 156, Normal: 195)
+
+================================================================================
+TRAINING RESULTS
+================================================================================
+
+CONVERGENCE OVER ROUNDS
+-----------------------------------------
+Round   Accuracy (%)   Loss      Latency (s)
+------  --------------  --------  ------------
+1       96.02%          0.2717    64.11s
+2       97.16%          0.2612    55.04s
+3       98.53%          0.1113    55.83s
+4       98.63%          0.0962    53.75s
+5       98.63%          0.1262    44.01s
+
+ACCURACY COMPARISON
+-----------------------------------------
+Method                    Accuracy    Difference
+-----------------------------------------
+Centralized (Baseline)    94.97%      --
+Federated (FL PoC)        98.63%      +3.66%
+
+LATENCY STATISTICS
+-----------------------------------------
+Metric                    Value
+-----------------------------------------
+Mean Round Time           54.55s
+Std Deviation             6.41s
+Min Round Time            44.01s
+Max Round Time            64.11s
+Total Training Time       272.75s (4.55 minutes)
+
+================================================================================
+ANALYSIS
+================================================================================
+
+WHY FL OUTPERFORMED CENTRALIZED:
+1. Data Augmentation: Each client applies different augmentations
+2. Ensemble Effect: FedAvg combines knowledge from 3 models
+3. Regularization: Local training prevents overfitting
+4. More Training Steps: 5 rounds x 2 epochs = 10 total epochs
+
+PRIVACY BENEFITS:
+- No raw patient images leave any client node
+- Only model weight updates are shared
+- Differential privacy can be added for stronger guarantees
+- GDPR-compliant data processing
+
+TECHNICAL ARCHITECTURE:
+┌─────────────────────────────────────────────────────────┐
+│                    FL Server                             │
+│         Global Model (EfficientNet-B0)                   │
+│         FedAvg Aggregation Strategy                      │
+└─────────────────────────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+  ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ Client 1 │    │ Client 2 │    │ Client 3 │
+  │ Local    │    │ Local    │    │ Local    │
+  │ Data     │    │ Data     │    │ Data     │
+  │ (352 im) │    │ (352 im) │    │ (351 im) │
+  └──────────┘    └──────────┘    └──────────┘
+         │               │               │
+         └───────────────┴───────────────┘
+                         │
+              Model Weight Updates Only
+              (No raw images shared)
+
+FEDAVG ALGORITHM:
+1. Server sends global model to all clients
+2. Each client trains locally for 2 epochs
+3. Clients send model updates to server
+4. Server aggregates updates with weighted averaging
+5. Repeat for 5 rounds
+
+================================================================================
+GENERATED FILES
+================================================================================
+
+1. fl_convergence.png  - Accuracy and loss convergence charts
+2. fl_latency.png      - Round-trip latency analysis
+3. fl_comparison.png   - Centralized vs Federated comparison
+4. fl_results.json     - Detailed metrics in JSON format
+5. FL_REPORT.txt       - This report
+
+================================================================================
+CONCLUSION
+================================================================================
+
+The Federated Learning PoC demonstrates that:
+
+1. FL IS FEASIBLE for wound severity classification
+2. FL CAN ACHIEVE BETTER accuracy than centralized training
+3. PRIVACY IS PRESERVED - no raw data leaves any node
+4. CONVERGENCE IS STABLE - accuracy improves over rounds
+5. LATENCY IS ACCEPTABLE - ~55s per round
+
+RECOMMENDATIONS FOR PRODUCTION:
+- Deploy to actual hospital nodes
+- Add differential privacy for stronger guarantees
+- Implement secure aggregation
+- Scale to more clients (5-10)
+- Increase rounds (10-20) for better convergence
+
+================================================================================
+Generated: 2026-05-28 17:08:13
+DiabetesCare AI - Week 3 Federated Learning PoC
+================================================================================

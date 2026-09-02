@@ -1,0 +1,32 @@
+# Federated Learning - Production Dependencies
+# Week 3 - Sahil's Implementation
+
+# Core FL Framework
+flower>=1.5.0
+
+# Differential Privacy
+opacus>=1.4.0
+
+# Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+
+# Utilities
+tqdm>=4.65.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# Web Framework (for production deployment)
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+
+# Optional: Advanced Cryptography
+# cryptography>=41.0.0  # For production secure aggregation
+# pyshamir>=0.2.0       # For secret sharing
+
+# Development
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0

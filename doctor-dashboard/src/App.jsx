@@ -17,6 +17,7 @@ import DpdpCompliancePage from './pages/DpdpCompliancePage';
 import SettingsPage from './pages/SettingsPage';
 import PatientPortal from './pages/PatientPortal';
 import AdminDashboard from './pages/AdminDashboard';
+import MobileAppSimulator from './pages/MobileAppSimulator';
 
 function ProtectedRoute({ children }) {
   if (!getToken()) {
@@ -58,6 +59,7 @@ function AppShell() {
         <Route path="/" element={<DoctorDashboard />} />
         <Route path="/admin-overview" element={<AdminDashboard />} />
         <Route path="/patient-portal" element={<PatientPortal />} />
+        <Route path="/mobile-simulator" element={<MobileAppSimulator />} />
         <Route path="/patients/:patientId" element={<PatientWoundDetail />} />
         <Route path="/alerts/:alertId" element={<AlertManagement />} />
         <Route path="/teleconsults" element={<TeleconsultScheduler />} />

@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+venv/
+ENV/
+env/
+.venv
+
+# Build & dist
+dist/
+build/
+.expo/
+.next/
+out/
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+secrets.json
+credentials.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Data
+data/
+datasets/
+*.zip
+*.tar.gz
+
+# Models (too large)
+models/
+*.pth
+*.h5
+*.onnx
+SNST-Saugata/
+*.db
+scratch/
+convert_pdfs.ps1
+create_reports.py
+create_detailed_reports.py

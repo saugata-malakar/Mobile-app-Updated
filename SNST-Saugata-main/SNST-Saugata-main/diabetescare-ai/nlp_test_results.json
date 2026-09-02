@@ -1,0 +1,250 @@
+[
+  {
+    "note_id": "CASE_001",
+    "timestamp": "2026-06-10T06:14:19.273642",
+    "original_text": "\n58-year-old male diabetic patient presents with chronic ulcer on left foot, \nplantar surface near the first toe. Wound measuring 3x2 cm with surrounding \ncellulitis extending approximately 4 cm. Purulent discharge noted with foul odor. \nPatient reports fever since yesterday.\n\nPhysical exam reveals erythema, warmth, and tenderness. Wound probing shows \ndepth extending to tendon level. No exposed bone palpable.\n\nAssessment: Wagner Grade 2 diabetic foot ulcer with signs of active infection.\n\nPlan:\n- Start broad spectrum IV antibiotics (Piperacillin-Tazobactam)\n- Arrange surgical debridement for tomorrow\n- Daily dressing changes with silver foam dressing\n- Non-weight bearing on left foot, wheelchair for mobility\n- X-ray left foot to rule out osteomyelitis\n- Optimize glycemic control, target HbA1c <7%\n- Refer to vascular surgery for arterial assessment\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "left foot",
+        "plantar surface",
+        "first toe"
+      ],
+      "infection_sign": [
+        "cellulitis",
+        "Purulent discharge",
+        "foul odor",
+        "fever",
+        "erythema",
+        "warmth"
+      ],
+      "treatment_recommendation": [
+        "IV antibiotics",
+        "surgical debridement",
+        "foam dressing",
+        "wheelchair",
+        "Refer to vascular"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 3,
+      "infection_signs": 6,
+      "treatment_recommendations": 5
+    }
+  },
+  {
+    "note_id": "CASE_002",
+    "timestamp": "2026-06-10T06:14:19.312084",
+    "original_text": "\n67-year-old female with 20-year history of diabetes. Presents with gangrenous \nchanges to right great toe and forefoot. Black necrotic tissue covering entire \ngreat toe with proximal spread. Patient reports severe pain despite analgesics.\n\nExamination shows extensive gangrene with signs of sepsis - tachycardia, \nhypotension, elevated WBC 18,000. Foul malodorous discharge from wound margins.\n\nAssessment: Wagner Grade 5 - extensive foot gangrene with systemic sepsis.\n\nImmediate plan:\n- Admit to hospital immediately\n- IV antibiotics - Vancomycin + Meropenem\n- Consult vascular surgery urgently\n- Blood cultures, inflammatory markers\n- Arrange below knee amputation within 24 hours\n- ICU monitoring for sepsis management\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "great toe",
+        "forefoot"
+      ],
+      "infection_sign": [
+        "necrotic tissue",
+        "gangrene",
+        "sepsis",
+        "elevated WBC",
+        "malodorous"
+      ],
+      "treatment_recommendation": [
+        "Admit to hospital",
+        "IV antibiotics",
+        "below knee amputation"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 2,
+      "infection_signs": 5,
+      "treatment_recommendations": 3
+    }
+  },
+  {
+    "note_id": "CASE_003",
+    "timestamp": "2026-06-10T06:14:19.344971",
+    "original_text": "\n52-year-old male with diabetic foot ulcer on right heel, under follow-up for \n4 weeks. Wound showing excellent granulation tissue, healthy pink appearance. \nSize reduced from 4x3 cm to 2x1 cm. No signs of infection.\n\nPatient compliant with offloading using cast boot. HbA1c improved from 9.2% \nto 7.4% with insulin adjustment.\n\nAssessment: Healing well, Wagner Grade 1 improving.\n\nPlan:\n- Continue current wound dressing with hydrogel\n- Continue offloading with cast boot for 2 more weeks\n- Weekly dressing changes\n- Follow up in 1 week\n- No antibiotics needed\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "right heel"
+      ],
+      "infection_sign": [],
+      "treatment_recommendation": [
+        "offloading",
+        "cast boot",
+        "insulin adjustment",
+        "wound dressing"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 1,
+      "infection_signs": 0,
+      "treatment_recommendations": 4
+    }
+  },
+  {
+    "note_id": "CASE_004",
+    "timestamp": "2026-06-10T06:14:19.384102",
+    "original_text": "\nPatient presents with 3-day history of new ulcer on left lateral malleolus. \nErythema spreading rapidly, now covering entire ankle region. Hot to touch, \nfluctuant area suggesting abscess formation.\n\nDiabetic for 15 years, poor control (HbA1c 11.2%). Peripheral neuropathy present.\n\nAssessment: Acute infected ulcer with abscess, likely cellulitis.\n\nUrgent plan:\n- Admit for IV antibiotics\n- Incision and drainage of abscess\n- Sharp debridement of necrotic tissue\n- Daily dressing with silver-impregnated foam\n- Strict blood glucose monitoring\n- MRI scan to rule out deep abscess or osteomyelitis\n- Infectious disease consult\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "lateral malleolus",
+        "ankle"
+      ],
+      "infection_sign": [
+        "Erythema",
+        "Hot to touch",
+        "fluctuant",
+        "abscess",
+        "cellulitis",
+        "necrotic tissue"
+      ],
+      "treatment_recommendation": [
+        "IV antibiotics",
+        "Sharp debridement",
+        "MRI scan"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 2,
+      "infection_signs": 6,
+      "treatment_recommendations": 3
+    }
+  },
+  {
+    "note_id": "CASE_005",
+    "timestamp": "2026-06-10T06:14:19.432627",
+    "original_text": "\n75-year-old diabetic with multiple ulcers: right second toe, left heel, and \nleft midfoot plantar surface. All wounds showing signs of infection with \npurulent discharge. Patient has significant peripheral vascular disease.\n\nRight second toe shows extensive necrosis, likely requiring toe amputation. \nLeft heel ulcer 5x4 cm with exposed bone, concerning for osteomyelitis.\n\nAssessment: Multiple Wagner Grade 3-4 ulcers with vascular compromise.\n\nComprehensive plan:\n- Hospital admission\n- Pan-culture from all wound sites\n- Start empiric IV antibiotics - Vancomycin + Piperacillin-Tazobactam\n- Vascular surgery consult for arterial revascularization\n- Bone biopsy from left heel for osteomyelitis diagnosis\n- Right second toe amputation planned\n- Negative pressure wound therapy (VAC) for left heel post-debridement\n- Podiatry involvement for long-term foot care\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "second toe",
+        "left heel",
+        "midfoot",
+        "plantar surface",
+        "Left heel"
+      ],
+      "infection_sign": [
+        "purulent discharge",
+        "necrosis",
+        "osteomyelitis"
+      ],
+      "treatment_recommendation": [
+        "toe amputation",
+        "IV antibiotics",
+        "Vascular surgery consult",
+        "amputation",
+        "debridement"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 5,
+      "infection_signs": 3,
+      "treatment_recommendations": 5
+    }
+  },
+  {
+    "note_id": "CASE_006",
+    "timestamp": "2026-06-10T06:14:19.463396",
+    "original_text": "\nPost-operative day 7 following left fifth toe amputation. Surgical site healing \nwell, no signs of infection. Suture line intact, minimal serous drainage.\n\nPatient ambulating with offloading shoe. Pain controlled with oral analgesics.\n\nAssessment: Post-amputation, healing well.\n\nPlan:\n- Continue daily dressing changes\n- Remove sutures in 1 week\n- Continue oral antibiotics (Augmentin) for 3 more days\n- Gradual weight bearing as tolerated\n- Physical therapy referral\n- Follow up in 1 week for suture removal\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "fifth toe"
+      ],
+      "infection_sign": [],
+      "treatment_recommendation": [
+        "amputation",
+        "offloading",
+        "oral antibiotics"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 1,
+      "infection_signs": 0,
+      "treatment_recommendations": 3
+    }
+  },
+  {
+    "note_id": "CASE_007",
+    "timestamp": "2026-06-10T06:14:19.498177",
+    "original_text": "\n45-year-old male diabetic presents with small superficial ulcer on right dorsal \nfoot, over second metatarsal head. Wound 1x1 cm, clean base, no signs of \ninfection. Patient noticed yesterday after removing tight shoes.\n\nGood pulses palpable, no neuropathy detected.\n\nAssessment: Wagner Grade 1 superficial ulcer, low infection risk.\n\nPlan:\n- Wound cleansing with saline\n- Hydrogel dressing\n- Proper footwear education\n- Weekly dressing changes\n- No antibiotics needed at this time\n- Monitor for any signs of infection\n- Follow up in 2 weeks\n        ",
+    "extracted_entities": {
+      "wound_location": [],
+      "infection_sign": [],
+      "treatment_recommendation": [
+        "Hydrogel dressing"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 0,
+      "infection_signs": 0,
+      "treatment_recommendations": 1
+    }
+  },
+  {
+    "note_id": "CASE_008",
+    "timestamp": "2026-06-10T06:14:19.548866",
+    "original_text": "\n62-year-old diabetic with chronic ulcer on right heel, present for 6 months. \nDespite multiple debridements and antibiotics, wound not improving. Recent \nX-ray shows bone erosion suggestive of osteomyelitis.\n\nProbe-to-bone test positive. Surrounding cellulitis with erythema, indurated \nmargins, and malodorous discharge.\n\nAssessment: Wagner Grade 3 with confirmed osteomyelitis.\n\nAggressive plan:\n- MRI to define extent of bone infection\n- Infectious disease consultation\n- Prolonged IV antibiotic therapy (6-8 weeks) - Vancomycin + Ceftriaxone\n- Consider surgical resection of infected bone\n- PICC line placement for long-term IV access\n- Hyperbaric oxygen therapy referral\n- Strict glucose control, insulin pump consideration\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "right heel"
+      ],
+      "infection_sign": [
+        "osteomyelitis",
+        "cellulitis",
+        "erythema",
+        "indurated",
+        "malodorous"
+      ],
+      "treatment_recommendation": []
+    },
+    "entity_count": {
+      "wound_locations": 1,
+      "infection_signs": 5,
+      "treatment_recommendations": 0
+    }
+  },
+  {
+    "note_id": "CASE_009",
+    "timestamp": "2026-06-10T06:14:19.594252",
+    "original_text": "\n55-year-old diabetic with ulcer on left instep, medial aspect. Wound 2x2 cm, \nclean granulation tissue visible. Doppler shows good arterial flow, palpable \npedal pulses bilaterally.\n\nPatient has been compliant with total contact cast for 3 weeks. Wound reducing \nin size appropriately.\n\nAssessment: Wagner Grade 1, healing progressing well with good vascular supply.\n\nPlan:\n- Continue total contact cast\n- Weekly monitoring\n- Continue current dressing regimen (foam dressing)\n- No antibiotics required\n- Optimize nutrition with protein supplementation\n- Follow up weekly for cast changes\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "instep"
+      ],
+      "infection_sign": [],
+      "treatment_recommendation": [
+        "total contact cast",
+        "foam dressing"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 1,
+      "infection_signs": 0,
+      "treatment_recommendations": 2
+    }
+  },
+  {
+    "note_id": "CASE_010",
+    "timestamp": "2026-06-10T06:14:19.645719",
+    "original_text": "\n70-year-old diabetic patient with end-stage renal disease on dialysis. Presents \nwith ulcer on right plantar surface, fourth metatarsal head. Wound 3x2 cm with \nslough covering 60% of wound bed. Surrounding area showing early cellulitis.\n\nPatient also has congestive heart failure and peripheral vascular disease. \nRecent HbA1c 9.8%.\n\nAssessment: Wagner Grade 2 ulcer in high-risk patient with multiple comorbidities.\n\nMultidisciplinary plan:\n- Nephrology - coordinate antibiotic dosing with dialysis schedule\n- Cardiology - optimize heart failure management before any procedures\n- Start IV antibiotics with renal dosing - Vancomycin (post-dialysis)\n- Gentle debridement of slough tissue\n- Offloading with wheelchair, no weight bearing\n- Daily dressing changes\n- Vascular assessment for possible revascularization\n- Palliative care consult for complex case management\n- Strict fluid balance monitoring\n- Weekly multidisciplinary team meetings\n        ",
+    "extracted_entities": {
+      "wound_location": [
+        "plantar surface"
+      ],
+      "infection_sign": [
+        "slough",
+        "cellulitis"
+      ],
+      "treatment_recommendation": [
+        "IV antibiotics",
+        "debridement",
+        "Offloading",
+        "wheelchair"
+      ]
+    },
+    "entity_count": {
+      "wound_locations": 1,
+      "infection_signs": 2,
+      "treatment_recommendations": 4
+    }
+  }
+]

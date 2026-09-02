@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resource Hub — Healthcare Privacy & AI Internship</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Fraunces:ital,wght@0,300;0,700;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --surface: #131920;
+    --border: #1e2a36;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #5b8eff;
+    --accent4: #ffcc44;
+    --text: #d4dde8;
+    --muted: #5a6a7e;
+    --heading: #eef2f7;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  /* GRID BG */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* HERO */
+  .hero { margin-bottom: 48px; }
+  .hero-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--accent); letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700; color: var(--heading);
+    line-height: 1.15; margin-bottom: 12px;
+  }
+  .hero h1 span { color: var(--accent); font-style: italic; }
+  .hero p { color: var(--muted); max-width: 600px; font-size: 14px; }
+  .hero-meta {
+    display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap;
+  }
+  .meta-chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 4px 10px; border-radius: 4px; letter-spacing: 1px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+
+  /* SEARCH */
+  .search-bar {
+    margin-bottom: 36px; position: relative;
+  }
+  .search-bar input {
+    width: 100%; padding: 12px 16px 12px 40px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; outline: none; transition: border .2s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar::before {
+    content: '⌕'; position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 18px; pointer-events: none;
+  }
+
+  /* FILTER TABS */
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 6px 14px; border-radius: 20px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase; transition: all .2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.06);
+  }
+
+  /* SECTION */
+  .section { margin-bottom: 48px; }
+  .section-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .section-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif; font-size: 18px; color: var(--heading); font-weight: 700;
+  }
+  .section-count {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--muted); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 12px;
+  }
+
+  /* CARDS GRID */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px; transition: all .2s;
+    display: flex; flex-direction: column; gap: 10px;
+    text-decoration: none; color: inherit; position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent)), transparent);
+    opacity: 0; transition: opacity .2s;
+  }
+  .card:hover { border-color: var(--card-accent, var(--accent)); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+  .card:hover::before { opacity: 1; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    padding: 2px 7px; border-radius: 3px; letter-spacing: .5px;
+    text-transform: uppercase; font-weight: 600;
+  }
+  .tag-paper   { background: rgba(91,142,255,.15); color: #5b8eff; }
+  .tag-law     { background: rgba(255,107,53,.15);  color: #ff6b35; }
+  .tag-tool    { background: rgba(0,229,160,.15);   color: #00e5a0; }
+  .tag-video   { background: rgba(255,204,68,.15);  color: #ffcc44; }
+  .tag-blog    { background: rgba(180,130,255,.15); color: #b482ff; }
+  .tag-github  { background: rgba(100,180,100,.15); color: #64b464; }
+  .tag-docs    { background: rgba(150,200,255,.15); color: #96c8ff; }
+  .tag-must    { background: rgba(255,60,60,.2);    color: #ff6060; }
+
+  .card-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; margin-top: 2px; transition: transform .2s; }
+  .card:hover .card-arrow { transform: translate(3px, -3px); color: var(--card-accent, var(--accent)); }
+
+  .card-title {
+    font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700;
+    color: var(--heading); line-height: 1.3;
+  }
+  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .card-meta {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--muted); border-top: 1px solid var(--border); padding-top: 10px;
+    margin-top: auto;
+  }
+  .card-meta strong { color: var(--text); }
+
+  /* PRIORITY BANNER */
+  .priority-banner {
+    background: linear-gradient(135deg, rgba(255,107,53,.12), rgba(255,60,60,.06));
+    border: 1px solid rgba(255,107,53,.3); border-radius: 10px;
+    padding: 16px 20px; margin-bottom: 36px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .priority-icon { font-size: 24px; }
+  .priority-text h3 { color: #ff6b35; font-family: 'Fraunces', serif; font-size: 14px; margin-bottom: 4px; }
+  .priority-text p { font-size: 12px; color: var(--muted); }
+
+  /* WEEK TIMELINE */
+  .timeline { display: flex; gap: 10px; margin-bottom: 40px; flex-wrap: wrap; }
+  .week-chip {
+    flex: 1; min-width: 120px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+    font-size: 11px;
+  }
+  .week-chip .wk { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-size: 10px; margin-bottom: 4px; }
+  .week-chip .wk-title { color: var(--heading); font-weight: 500; font-size: 12px; }
+  .week-chip .wk-desc { color: var(--muted); font-size: 10px; margin-top: 3px; }
+
+  .hidden { display: none !important; }
+
+  @media(max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">// internship resource hub · health screening AI</div>
+    <h1>Deep-Dive <span>Resources</span><br>for Healthcare Privacy & AI</h1>
+    <p>Everything you need across DPDP Act, Federated Learning, Data Anonymisation, Clinical NLP, RAG, Multimodal AI — primary sources, research papers, tools, tutorials, and videos.</p>
+    <div class="hero-meta">
+      <span class="meta-chip">SAUGATA MALAKAR · 23CE10062</span>
+      <span class="meta-chip">6-WEEK ENGAGEMENT</span>
+      <span class="meta-chip">WEEK 1 PRIORITY: PII MAP + DPDP</span>
+    </div>
+  </div>
+
+  <!-- PRIORITY BANNER -->
+  <div class="priority-banner">
+    <div class="priority-icon">🚨</div>
+    <div class="priority-text">
+      <h3>First-Day Priority — Read These Before Anything Else</h3>
+      <p>DPDP Act 2023 (official text) + DPDP Rules 2025 (MeitY) + the Carnegie Endowment analysis. The PII map depends on knowing these cold.</p>
+    </div>
+  </div>
+
+  <!-- WEEK CHIPS -->
+  <div class="timeline">
+    <div class="week-chip"><div class="wk">WK 1</div><div class="wk-title">PII Audit + DPDP</div><div class="wk-desc">Sections 1–4, 8 DPDP Act</div></div>
+    <div class="week-chip"><div class="wk">WK 2</div><div class="wk-title">Anonymisation</div><div class="wk-desc">HMAC, k-anon, erasure</div></div>
+    <div class="week-chip"><div class="wk">WK 3</div><div class="wk-title">Federated Learning</div><div class="wk-desc">Flower + FedAvg PoC</div></div>
+    <div class="week-chip"><div class="wk">WK 4</div><div class="wk-title">Multimodal + NLP</div><div class="wk-desc">Gemini Vision + spaCy</div></div>
+    <div class="week-chip"><div class="wk">WK 5</div><div class="wk-title">RAG + Consent</div><div class="wk-desc">FAISS + LangChain</div></div>
+    <div class="week-chip"><div class="wk">WK 6</div><div class="wk-title">Audit + PIA</div><div class="wk-desc">OWASP + IEC ethics</div></div>
+  </div>
+
+  <!-- SEARCH + FILTER -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search resources, topics, tools..." oninput="filterCards()">
+  </div>
+  <div class="filters" id="filterBtns">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('law', this)">📜 Law / Policy</button>
+    <button class="filter-btn" onclick="setFilter('paper', this)">📄 Research Papers</button>
+    <button class="filter-btn" onclick="setFilter('tool', this)">🛠 Tools / Libraries</button>
+    <button class="filter-btn" onclick="setFilter('video', this)">🎥 Videos / Courses</button>
+    <button class="filter-btn" onclick="setFilter('blog', this)">✍️ Blogs / Guides</button>
+    <button class="filter-btn" onclick="setFilter('github', this)">💻 GitHub / Code</button>
+    <button class="filter-btn" onclick="setFilter('docs', this)">📚 Docs</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: OFFICIAL LEGAL TEXTS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="dpdp-law">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(255,107,53,.15)">📜</div>
+      <span class="section-title">Official DPDP Legal Texts — Read First</span>
+      <span class="section-count">5 sources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf" target="_blank" data-tags="law must" style="--card-accent:#ff6b35">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-must">MUST READ</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act 2023 — Official Gazette (MeitY PDF)</div>
+        <div class="card-desc">The primary source. Full Act text notified by President of India on 11 Aug 2023. Sections 4 (purpose limitation), 5 (data localisation), 6 (erasure), 8 (sensitive data) are your Week 1 reference.</div>
+        <div class="card-meta"><strong>Source:</strong> MeitY / Gazette of India · 2023</div>
+      </a>
+
+      <a class="card" href="https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/nov/doc20251117695301.pdf" target="_blank" data-tags="law must" style="--card-accent:#ff6b35">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-must">MUST READ</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Rules 2025 — PIB Official Release</div>
+        <div class="card-desc">Notified 13 Nov 2025. Rules 3, 5–16, 22–23 come into force after 18 months. Covers consent notices, breach reporting, Data Protection Board, children's data, and the 18-month phased compliance timeline.</div>
+        <div class="card-meta"><strong>Source:</strong> PIB / MeitY · Nov 2025</div>
+      </a>
+
+      <a class="card" href="https://www.meity.gov.in/data-protection-framework" target="_blank" data-tags="law docs" style="--card-accent:#ff6b35">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-docs">DOCS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">MeitY Data Protection Framework Hub</div>
+        <div class="card-desc">Official landing page for all DPDP Act + Rules documents, FAQs, and implementation guidance. Bookmark this — regulations update here first.</div>
+        <div class="card-meta"><strong>Source:</strong> MeitY Official Website</div>
+      </a>
+
+      <a class="card" href="https://carnegieendowment.org/research/2023/10/understanding-indias-new-data-protection-law?lang=en" target="_blank" data-tags="paper law" style="--card-accent:#ff6b35">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">ANALYSIS</span><span class="tag tag-must">MUST READ</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Carnegie Endowment — Understanding India's DPDP Act</div>
+        <div class="card-desc">Working paper analysing the Act after 6+ years of deliberation. Best plain-language analysis of what the law actually requires, comparing to GDPR. Ideal for your gap analysis section.</div>
+        <div class="card-meta"><strong>Author:</strong> Carnegie Endowment for Int'l Peace · Oct 2023</div>
+      </a>
+
+      <a class="card" href="https://tsaaro.com/blogs/privacy-and-healthcare-the-impact-of-the-dpdp-act-2023-and-indias-sectoral-healthcare-regulations/" target="_blank" data-tags="law blog" style="--card-accent:#ff6b35">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">BLOG</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP + Healthcare Sectoral Laws — Tsaaro Analysis</div>
+        <div class="card-desc">How DPDP intersects with Clinical Establishments Act, Mental Healthcare Act 2017, NCAHP Act, and IRDAI regulations. Essential for understanding the layered compliance landscape your platform sits in.</div>
+        <div class="card-meta"><strong>Source:</strong> Tsaaro Privacy Consulting · 2025</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: DPDP RESEARCH PAPERS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="dpdp-papers">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(91,142,255,.15)">📄</div>
+      <span class="section-title">DPDP Act — Academic Research Papers</span>
+      <span class="section-count">6 papers</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://journals.sagepub.com/doi/10.1177/00195561241271575" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Putting Interests of Digital Nagriks First — DPDP Act 2023</div>
+        <div class="card-desc">Malhotra & Malhotra (2024), SAGE. Evaluates DPDP Act across six sections; compares to Singapore PDPA, EU GDPR, and China PIPL. Recommends adjustments for balancing privacy with innovation. Solid citation for your PIA document.</div>
+        <div class="card-meta"><strong>Journal:</strong> Indian Journal of Public Administration · 2024</div>
+      </a>
+
+      <a class="card" href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4614984" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Indian DPDP Act 2023 from a European Perspective — Korff (SSRN)</div>
+        <div class="card-desc">Douwe Korff assesses the DPDP Act against EU GDPR standards. Key for Gap Analysis: where India's Act falls short of GDPR's adequacy standards, especially regarding enforcement independence and data transfers.</div>
+        <div class="card-meta"><strong>Source:</strong> SSRN · Nov 2023</div>
+      </a>
+
+      <a class="card" href="https://link.springer.com/article/10.1365/s43439-025-00164-2" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDPA 2023: Implications, Challenges, Future Prospects — Springer</div>
+        <div class="card-desc">Comparative and doctrinal legal analysis. Recommends legislative refinements and privacy-enhancing technologies. Discusses institutional independence of DPBI — relevant for your IEC ethics submission framing.</div>
+        <div class="card-meta"><strong>Journal:</strong> Int'l Cybersecurity Law Review · Springer · 2025</div>
+      </a>
+
+      <a class="card" href="https://www.researchgate.net/publication/387550185_THE_DIGITAL_PERSONAL_DATA_PROTECTION_ACT_OF_2023_STRENGTHENING_PRIVACY_IN_THE_DIGITAL_AGE" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span><span class="tag tag-must">KEY</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act + AI Diagnostic Tools in Indian Public Health Context</div>
+        <div class="card-desc">PRISMA-ScR scoping review of DPDP Act, ICMR guidelines, and international AI ethics guidelines for AI diagnostic tools in Indian public health. Directly relevant — your platform is exactly this use case.</div>
+        <div class="card-meta"><strong>Source:</strong> ResearchGate / ResearchSquare · Dec 2024</div>
+      </a>
+
+      <a class="card" href="https://www.lawjournals.org/assets/archives/2025/vol11issue3/11064.pdf" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act 2023: Strengthening Privacy in the Digital Age</div>
+        <div class="card-desc">Critical examination of DPDP provisions vs GDPR gold standards. Covers data fiduciaries, Data Principals' rights, and Data Protection Board adjudication. Good for citing in your DPDP gap analysis deliverable.</div>
+        <div class="card-meta"><strong>Journal:</strong> Law Journals · Vol 11 Issue 3 · 2025</div>
+      </a>
+
+      <a class="card" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12000087/" target="_blank" data-tags="paper" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">AI in Neurology: ICMR Guidelines + DPDP Act — Indian Perspective</div>
+        <div class="card-desc">Traces the progression of Indian AI policy from IT Act 2000 → DPDP Act 2023. Covers ICMR's "Human in the Loop" model, informed consent, pre-consent, re-consent, and Right to be Forgotten — all relevant to your consent versioning module.</div>
+        <div class="card-meta"><strong>Journal:</strong> Annals of Indian Academy of Neurology · PMC · 2025</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: DATA ANONYMISATION & PRIVACY THEORY -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="anon">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(0,229,160,.15)">🔐</div>
+      <span class="section-title">Data Anonymisation, k-Anonymity & Privacy Theory</span>
+      <span class="section-count">6 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://arxiv.org/pdf/1710.01615" target="_blank" data-tags="paper" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span><span class="tag tag-must">CORE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">(k,ε)-Anonymity: k-Anonymity + ε-Differential Privacy Combined</div>
+        <div class="card-desc">The hybrid framework combining k-anonymisation with differential privacy. Covers curse of dimensionality for QI fields and how stochastic vs deterministic indistinguishability differ. Directly implements what Week 2 asks for.</div>
+        <div class="card-meta"><strong>Source:</strong> arXiv:1710.01615 · 2017</div>
+      </a>
+
+      <a class="card" href="https://arxiv.org/pdf/1101.2604" target="_blank" data-tags="paper" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">On Sampling, Anonymization & Differential Privacy — k-Anon Meets DP</div>
+        <div class="card-desc">Proves that k-anonymisation with random sampling satisfies (ε,δ)-differential privacy. Shows "hiding in a crowd of k" gives real guarantees. Essential theory behind your k≥5 export requirement.</div>
+        <div class="card-meta"><strong>Source:</strong> arXiv:1101.2604</div>
+      </a>
+
+      <a class="card" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10020182/" target="_blank" data-tags="paper" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span><span class="tag tag-must">KEY</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Anonymization-Based Privacy-Preserving Data Collection for Digital Health</div>
+        <div class="card-desc">Covers k-anon, l-diversity, t-closeness for EHR. Discusses centralized vs third-party anonymiser risks — directly relevant to your DB export pipeline design. Excellent architecture reference.</div>
+        <div class="card-meta"><strong>Journal:</strong> Frontiers in Big Data · PMC · 2023</div>
+      </a>
+
+      <a class="card" href="https://www.researchgate.net/publication/395921557_Comparative_Evaluation_of_K-Anonymity_Differential_Privacy_and_Pseudonymization_for_Data_Protection_in_Rare_Disease_Registries" target="_blank" data-tags="paper" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Comparative: k-Anonymity vs Differential Privacy vs Pseudonymization</div>
+        <div class="card-desc">Proposes a hybrid framework: pseudonymisation for internal operations, k-anonymity for interpretable analysis, differential privacy for public dissemination. This is exactly the layered architecture you should design.</div>
+        <div class="card-meta"><strong>Source:</strong> ResearchGate · 2025</div>
+      </a>
+
+      <a class="card" href="https://www.researchgate.net/publication/322330948_A_Study_on_k-anonymity_l-diversity_and_t-closeness_Techniques_focusing_Medical_Data" target="_blank" data-tags="paper" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">k-Anonymity, l-Diversity, t-Closeness — Medical Data Focus</div>
+        <div class="card-desc">Practical walkthrough of generalisation and suppression for medical datasets. Explains k-anon with database linkage prevention. Good background for your Week 2 anonymisation module design choices.</div>
+        <div class="card-meta"><strong>Journal:</strong> IJIRST · 2017</div>
+      </a>
+
+      <a class="card" href="https://towardsdatascience.com/differential-privacy-and-k-anonymity-for-machine-learning-fbb416f32b6/" target="_blank" data-tags="blog" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">BLOG</span><span class="tag tag-tool">CODE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Differential Privacy + k-Anonymity for ML — Towards Data Science</div>
+        <div class="card-desc">Hands-on: applying k-anonymity to age generalisation on diabetes dataset. Uses MATLAB but the logic maps directly to your Python implementation. Includes re-identification risk evaluation.</div>
+        <div class="card-meta"><strong>Source:</strong> Towards Data Science · 2025</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: FEDERATED LEARNING -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="fl">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(255,204,68,.15)">🌐</div>
+      <span class="section-title">Federated Learning — Papers, Docs & Code</span>
+      <span class="section-count">8 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://flower.ai/docs/framework/tutorial-series-what-is-federated-learning.html" target="_blank" data-tags="docs tool" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-must">START HERE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Flower Framework — Official FL Tutorial (FedAvg)</div>
+        <div class="card-desc">The official Flower tutorial series. Covers FedAvg from scratch, explains weighted averaging by client sample size, client simulation, and how to build a server + client in under 50 lines. Your Week 3 implementation guide.</div>
+        <div class="card-meta"><strong>Source:</strong> flower.ai official docs</div>
+      </a>
+
+      <a class="card" href="https://flower.ai/docs/framework/tutorial-series-use-a-federated-learning-strategy-pytorch.html" target="_blank" data-tags="docs tool" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-tool">PYTORCH</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Flower — Custom FL Strategies with PyTorch (FedAvg → FedAdagrad)</div>
+        <div class="card-desc">Switching from FedAvg to FedAdagrad, understanding server_app.py, adding federated evaluation. Shows how to go beyond basic FedAvg if accuracy gap is large — directly answers the Week 3 "explain why and what data volume would close it" requirement.</div>
+        <div class="card-meta"><strong>Source:</strong> flower.ai official docs</div>
+      </a>
+
+      <a class="card" href="https://arxiv.org/pdf/2007.14390" target="_blank" data-tags="paper" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span><span class="tag tag-must">CORE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Flower: A Friendly Federated Learning Framework — Original Paper</div>
+        <div class="card-desc">The Flower framework paper. Explains Strategy abstraction, FedAvg vs FedYogi, ML-framework-agnostic design. Must-cite if you include FL references in your Week 3 report.</div>
+        <div class="card-meta"><strong>Authors:</strong> Beutel et al. · arXiv:2007.14390 · 2020</div>
+      </a>
+
+      <a class="card" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11728217/" target="_blank" data-tags="paper" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span><span class="tag tag-must">KEY</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">FL in Smart Healthcare — Comprehensive Review 2023–2024 (PMC)</div>
+        <div class="card-desc">Covers FL + IoT, adversarial attacks, data poisoning, model inversion, and differential privacy in healthcare FL. Exclusively 2023–2024 literature. Best reference for your convergence chart analysis and latency discussion.</div>
+        <div class="card-meta"><strong>Journal:</strong> MDPI Electronics · PMC · Dec 2024</div>
+      </a>
+
+      <a class="card" href="https://www.nature.com/articles/s41598-025-97565-4" target="_blank" data-tags="paper" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Privacy-Preserving FL for Collaborative Medical Data Mining — Nature Sci Reports</div>
+        <div class="card-desc">Transfer learning + FL for medical image classification (GoogLeNet, VGG16). Reports 50% reduction in training time and 40% drop in local processing time vs centralised. Strong benchmark numbers for your accuracy vs centralised baseline section.</div>
+        <div class="card-meta"><strong>Journal:</strong> Scientific Reports · Nature · Apr 2025</div>
+      </a>
+
+      <a class="card" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10418741/" target="_blank" data-tags="paper" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-paper">PAPER</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Privacy Enhancement Methods for FL in Healthcare — IJERPH Review</div>
+        <div class="card-desc">Reviews 24 FL healthcare papers. Covers differential privacy, homomorphic encryption, blockchain, P2P, edge FL. Compares algorithms (accuracy, precision, recall, F-score). Good for understanding trade-offs when you write the Week 3 PoC report.</div>
+        <div class="card-meta"><strong>Journal:</strong> Int'l Journal of Environmental Research & Public Health · PMC · 2023</div>
+      </a>
+
+      <a class="card" href="https://huggingface.co/blog/fl-with-flower" target="_blank" data-tags="blog tool" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">BLOG</span><span class="tag tag-tool">CODE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Federated Learning with Hugging Face + Flower</div>
+        <div class="card-desc">Step-by-step tutorial wrapping HuggingFace models as Flower clients. Shows FlowerClient class, NumPyClient interface, and simulation mode. Useful if you want to wrap an EfficientNet or transformer as your federated client.</div>
+        <div class="card-meta"><strong>Source:</strong> HuggingFace Blog · 2023</div>
+      </a>
+
+      <a class="card" href="https://github.com/vaseline555/Federated-Learning-with-Flower" target="_blank" data-tags="github" style="--card-accent:#ffcc44">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-github">GITHUB</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">GitHub — FL Simulation with Flower (FedAvg, IID & Non-IID)</div>
+        <div class="card-desc">Complete simulation repo: FedAvg with configurable num_clients, batch size, local epochs, IID/non-IID splits, fraction_fit. Clean reference implementation you can fork for your 3-node wound classification PoC.</div>
+        <div class="card-meta"><strong>Source:</strong> vaseline555 · GitHub</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 5: CLINICAL NLP + spaCy -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="nlp">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(180,130,255,.15)">🧠</div>
+      <span class="section-title">Clinical NLP — spaCy, NER & Medical Text Extraction</span>
+      <span class="section-count">7 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://spacy.io/usage/rule-based-matching" target="_blank" data-tags="docs tool" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-must">START HERE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">spaCy — EntityRuler & Rule-Based Matching (Official Docs)</div>
+        <div class="card-desc">Official spaCy docs for EntityRuler — how to add custom pattern rules for wound_location, infection_sign, treatment_recommendation. The exact tool your Week 4 task requires. Includes JSON pattern format and pipeline integration.</div>
+        <div class="card-meta"><strong>Source:</strong> spacy.io official docs</div>
+      </a>
+
+      <a class="card" href="https://www.analyticsvidhya.com/blog/2023/02/extracting-medical-information-from-clinical-text-with-nlp/" target="_blank" data-tags="blog tool" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">TUTORIAL</span><span class="tag tag-must">KEY</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Extracting Medical Info from Clinical Text with spaCy + SciSpaCy</div>
+        <div class="card-desc">Step-by-step: building a spaCy pipeline with SciSpaCy NER (en_ner_bc5cdr_md) for disease, drug, and dose extraction. Uses mtsample.csv clinical notes. Directly adaptable to wound_location + infection_sign extraction.</div>
+        <div class="card-meta"><strong>Source:</strong> Analytics Vidhya · 2023</div>
+      </a>
+
+      <a class="card" href="https://www.newscatcherapi.com/blog-posts/train-custom-named-entity-recognition-ner-model-with-spacy-v3" target="_blank" data-tags="blog tool" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">TUTORIAL</span><span class="tag tag-tool">spaCy v3</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Train Custom NER Model from Scratch — spaCy v3</div>
+        <div class="card-desc">Full walkthrough: annotation format, IOB chunking, training config, evaluation. Shows why pre-trained models fail on domain-specific text and how to fix it. Use this if bc5cdr doesn't catch wound-specific terms.</div>
+        <div class="card-meta"><strong>Source:</strong> NewsCatcher API Blog · 2024</div>
+      </a>
+
+      <a class="card" href="https://gbnegrini.com/post/biomedical-text-nlp-scispacy-named-entity-recognition-medical-records/" target="_blank" data-tags="blog" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">BLOG</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">BioNLP with scispaCy — NER on Medical Records</div>
+        <div class="card-desc">scispaCy model overview: en_ner_bc5cdr_md (diseases+chemicals), en_core_sci_lg (general biomedical). Shows how to load, run, and visualise NER on EHR text. Good starting point before building custom entity ruler.</div>
+        <div class="card-meta"><strong>Source:</strong> GB Negrini · 2021</div>
+      </a>
+
+      <a class="card" href="https://kormilitzin.medium.com/med7-clinical-information-extraction-system-in-python-and-spacy-5e6f68ab1c68" target="_blank" data-tags="blog tool" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">BLOG</span><span class="tag tag-tool">TOOL</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Med7 — Clinical Info Extraction (7 Medication Entities) with spaCy</div>
+        <div class="card-desc">Med7 model trained on MIMIC-III (60,000 ICU admissions). Extracts dosage, drug name, duration, form, frequency, route, strength. Use as a baseline before adding custom wound/infection entities.</div>
+        <div class="card-meta"><strong>Source:</strong> Kormilitzin · Medium · 2021</div>
+      </a>
+
+      <a class="card" href="https://github.com/NLPatVCU/medaCy" target="_blank" data-tags="github tool" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-github">GITHUB</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">medaCy — Medical NER + Information Extraction (VCU)</div>
+        <div class="card-desc">Maintained by NLP@VCU. Highly predictive out-of-the-box models for medical NER. Customizable pipelines with privacy-preserving considerations. Alternative to scispaCy for wound entity extraction.</div>
+        <div class="card-meta"><strong>Source:</strong> NLPatVCU · GitHub</div>
+      </a>
+
+      <a class="card" href="https://odsc.medium.com/training-a-medication-named-entity-recognition-model-from-scratch-with-spacy-e94fdff56022" target="_blank" data-tags="blog" style="--card-accent:#b482ff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-blog">TUTORIAL</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Training Medication NER from Scratch — spaCy + n2c2 Clinical Notes</div>
+        <div class="card-desc">Uses 2018 n2c2 dataset (clinical notes with medications). Shows the full pipeline: annotation → training → evaluation → deployment. Discusses domain-transfer failure (F1 0.6 on new data). Benchmark for what to expect on your consultation notes.</div>
+        <div class="card-meta"><strong>Source:</strong> ODSC · Medium · 2022</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 6: RAG + LANGCHAIN + FAISS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="rag">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(91,142,255,.15)">🔍</div>
+      <span class="section-title">RAG, LangChain & FAISS — Field Worker Assistant</span>
+      <span class="section-count">5 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://python.langchain.com/docs/use_cases/question_answering/" target="_blank" data-tags="docs tool" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-must">START HERE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">LangChain — RAG / QA over Documents (Official Docs)</div>
+        <div class="card-desc">Official LangChain guide: PDF loading → text splitting → embedding → FAISS vector store → retrieval chain → POST endpoint. The exact pipeline your Week 5 /fieldworker/ask endpoint needs. Covers chunk_size, chunk_overlap tuning for recall.</div>
+        <div class="card-meta"><strong>Source:</strong> LangChain official docs</div>
+      </a>
+
+      <a class="card" href="https://faiss.ai/index.html" target="_blank" data-tags="docs tool" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-tool">FAISS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">FAISS — Facebook AI Similarity Search (Official Docs)</div>
+        <div class="card-desc">Index types: IndexFlatL2 (exact, small corpus), IndexIVFFlat (fast, large corpus). For a field worker training manual, IndexFlatL2 is sufficient. Covers similarity search, add/search API, serialisation to disk for persistence.</div>
+        <div class="card-meta"><strong>Source:</strong> faiss.ai · Meta AI</div>
+      </a>
+
+      <a class="card" href="https://python.langchain.com/docs/integrations/vectorstores/faiss/" target="_blank" data-tags="docs tool" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">LangChain × FAISS Integration</div>
+        <div class="card-desc">FAISS.from_documents(), similarity_search(), save_local()/load_local(). The exact integration code for your Week 5 RAG pipeline. Also covers MMR (maximal marginal relevance) for diversity in retrieved chunks.</div>
+        <div class="card-meta"><strong>Source:</strong> LangChain Integration Docs</div>
+      </a>
+
+      <a class="card" href="https://ai.google.dev/gemini-api/docs/vision" target="_blank" data-tags="docs tool" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-tool">GEMINI</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Gemini Vision API — Multimodal Prompt Guide (Google)</div>
+        <div class="card-desc">How to send image + structured text together to Gemini 1.5 Pro Vision. Covers inline_data (base64 image) + structured prompt returning JSON. Your Week 4 multimodal prompt template builds directly on this.</div>
+        <div class="card-meta"><strong>Source:</strong> Google AI for Developers · Official Docs</div>
+      </a>
+
+      <a class="card" href="https://python.langchain.com/docs/modules/chains/document/refine" target="_blank" data-tags="docs" style="--card-accent:#5b8eff">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">LangChain — Refine Chain for Long PDF Documents</div>
+        <div class="card-desc">When the field worker training manual is long (100+ pages), stuff chain fails. Refine chain iteratively processes chunks. Use this if /fieldworker/ask relevance drops below 18/20 threshold.</div>
+        <div class="card-meta"><strong>Source:</strong> LangChain Docs</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 7: SECURITY, AUDIT, OWASP -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="security">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(255,60,60,.15)">🛡</div>
+      <span class="section-title">Security, Encryption, Audit Trail & OWASP</span>
+      <span class="section-count">5 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://owasp.org/www-project-top-ten/" target="_blank" data-tags="docs tool" style="--card-accent:#ff6060">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-must">WK 6</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">OWASP Top 10 — 2021 (Your Week 6 Checklist)</div>
+        <div class="card-desc">A01 Broken Access Control, A02 Cryptographic Failures, A03 Injection, A07 Auth Failures — these are most likely gaps in the health platform APIs. Work through all 10 systematically and document gaps honestly as the brief says.</div>
+        <div class="card-meta"><strong>Source:</strong> OWASP Foundation · 2021</div>
+      </a>
+
+      <a class="card" href="https://cryptography.io/en/latest/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM" target="_blank" data-tags="docs tool" style="--card-accent:#ff6060">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-tool">PYTHON</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Python cryptography — AES-256-GCM Implementation</div>
+        <div class="card-desc">Official docs for AESGCM in the cryptography library. 256-bit key generation, nonce handling, encrypt() / decrypt(). This is what you use in Week 2 for wound image encryption and Week 6 for the encryption audit.</div>
+        <div class="card-meta"><strong>Source:</strong> cryptography.io official docs</div>
+      </a>
+
+      <a class="card" href="https://docs.python.org/3/library/hmac.html" target="_blank" data-tags="docs tool" style="--card-accent:#ff6060">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span><span class="tag tag-tool">STDLIB</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Python HMAC Module — SHA256 Pseudonymisation</div>
+        <div class="card-desc">Built-in Python stdlib. hmac.new(key, patient_id, sha256).hexdigest() is your pseudonymisation primitive. Combine with os.urandom(32) for the rotating salt. Covers key rotation patterns for your anonymisation module.</div>
+        <div class="card-meta"><strong>Source:</strong> Python 3 Standard Library Docs</div>
+      </a>
+
+      <a class="card" href="https://owasp.org/www-project-api-security/" target="_blank" data-tags="docs" style="--card-accent:#ff6060">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">OWASP API Security Top 10 — 2023</div>
+        <div class="card-desc">Separate from OWASP Top 10 — specific to REST APIs. API1 (BOLA), API2 (Broken Auth), API3 (Object Property Exposure) are almost certain findings in health APIs. Critical for your Week 6 API endpoint review.</div>
+        <div class="card-meta"><strong>Source:</strong> OWASP API Security Project · 2023</div>
+      </a>
+
+      <a class="card" href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" data-tags="docs" style="--card-accent:#ff6060">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-docs">DOCS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">OWASP Logging Cheat Sheet — Audit Trail Design</div>
+        <div class="card-desc">What to log (actor, action, resource, timestamp, IP), what NOT to log (passwords, session tokens). Your audit_logs table and completeness test in Week 6 should match these standards exactly.</div>
+        <div class="card-meta"><strong>Source:</strong> OWASP Cheat Sheet Series</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 8: HEALTHCARE DPDP COMPLIANCE GUIDES -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="compliance">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(0,229,160,.15)">🏥</div>
+      <span class="section-title">Healthcare DPDP Compliance — Practical Guides</span>
+      <span class="section-count">5 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://amlegals.com/health-data-and-the-dpdp-act-a-practical-guide/" target="_blank" data-tags="blog law" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">PRACTICAL</span><span class="tag tag-must">KEY</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">Health Data + DPDP Act — Practical Compliance Guide (AM Legals)</div>
+        <div class="card-desc">Penalty breakdown: ₹250 crore for security breach, ₹200 crore for breach notification failure, ₹150 crore for general fiduciary breach. Distills operational requirements for hospitals. Use this to anchor your PIA risk sections.</div>
+        <div class="card-meta"><strong>Source:</strong> AM Legals · 2026</div>
+      </a>
+
+      <a class="card" href="https://truecopy.in/blog/dpdp-act-2023-guide-for-the-healthcare-industry/" target="_blank" data-tags="blog law" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">GUIDE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act 2023 — Complete Healthcare Industry Guide</div>
+        <div class="card-desc">Covers telemedicine platforms, EMR systems, diagnostic labs. Patient rights (access, correction, erasure). How the Act changes operational transparency obligations. Good background for your consent versioning design.</div>
+        <div class="card-meta"><strong>Source:</strong> Truecopy · Dec 2025</div>
+      </a>
+
+      <a class="card" href="https://www.seqrite.com/blog/the-dpdp-act-2023-guide-for-healthcare-leaders/" target="_blank" data-tags="blog law" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">GUIDE</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act 2023 Guide for Healthcare Leaders — Seqrite</div>
+        <div class="card-desc">Cybersecurity + DPDP intersection. Data Fiduciary obligations, mandatory security measures for patient data. Discusses ABDM (Ayushman Bharat Digital Mission) alignment — your platform's regulatory context.</div>
+        <div class="card-meta"><strong>Source:</strong> Seqrite Cybersecurity · Jun 2025</div>
+      </a>
+
+      <a class="card" href="https://www.ricago.com/blog/legal-guidelines-for-digital-health-and-telemedicine-under-the-dpdpa" target="_blank" data-tags="blog law" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">BLOG</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDPA 2023 + NDHM: Digital Health & Telemedicine Legal Guidelines</div>
+        <div class="card-desc">How DPDPA interacts with NDHM / Ayushman Bharat ABHA Health IDs. Each citizen gets a unique Health ID — how does your platform's consent interact with this national framework? Important for the IEC ethics review context.</div>
+        <div class="card-meta"><strong>Source:</strong> Ricago Privacy · 2025</div>
+      </a>
+
+      <a class="card" href="https://www.aarnalaw.com/insights/the-applicability-of-the-dpdp-act-in-hospitals-a-new-era-for-patient-data-protection" target="_blank" data-tags="blog law" style="--card-accent:#00e5a0">
+        <div class="card-top">
+          <div class="card-tags"><span class="tag tag-law">LAW</span><span class="tag tag-blog">ANALYSIS</span></div>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title">DPDP Act Applicability in Hospitals — Compliance Obligations (Aarna Law)</div>
+        <div class="card-desc">Legal analysis of which hospital data activities constitute "data fiduciary" obligations. Covers duty to appoint DPO, notice and consent, security safeguards, and breach notification procedures. Useful for structuring the PIA.</div>
+        <div class="card-meta"><strong>Source:</strong> Aarna Law · Dec 2025</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECTION 9: QUICK-ACCESS TOOL DOCS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section" data-section="tools">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(100,180,100,.15)">🛠</div>
+      <span class="section-title">Core Stack — Official Docs & Quickstarts</span>
+      <span class="section-count">7 resources</span>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="https://spacy.io/usage/processing-pipelines" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">spaCy — Processing Pipelines & EntityRuler</div>
+        <div class="card-desc">How to add EntityRuler before the NER component, load JSON patterns, and pipe large document batches efficiently. Your Week 4 NLP pipeline reference.</div>
+        <div class="card-meta"><strong>Source:</strong> spacy.io</div>
+      </a>
+
+      <a class="card" href="https://flower.ai/docs/framework/ref-api/flwr.serverapp.strategy.FedAvg.html" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">Flower — FedAvg API Reference</div>
+        <div class="card-desc">Full parameter list: fraction_fit, min_available_clients, initial_parameters, num_rounds, timeout, evaluate_fn. Use evaluate_fn for server-side accuracy comparison vs centralised baseline.</div>
+        <div class="card-meta"><strong>Source:</strong> flower.ai API Reference</div>
+      </a>
+
+      <a class="card" href="https://python.langchain.com/docs/modules/data_connection/document_loaders/pdf" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">LangChain — PDF Loader + Text Splitter</div>
+        <div class="card-desc">PyPDFLoader, RecursiveCharacterTextSplitter (chunk_size=1000, overlap=200). The first two steps of your /fieldworker/ask RAG pipeline. Load the field worker training manual PDF, split, embed, index.</div>
+        <div class="card-meta"><strong>Source:</strong> LangChain Docs</div>
+      </a>
+
+      <a class="card" href="https://ai.google.dev/api/python/google/generativeai" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">Google Generative AI Python SDK — Gemini 1.5 Pro Vision</div>
+        <div class="card-desc">genai.GenerativeModel("gemini-1.5-pro-vision"), generate_content() with PIL images + text parts, response.text parsing. Your Week 4 multimodal prompt foundation.</div>
+        <div class="card-meta"><strong>Source:</strong> Google AI Python SDK Docs</div>
+      </a>
+
+      <a class="card" href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">python-docx — Creating Word Documents Programmatically</div>
+        <div class="card-desc">Your stack lists python-docx. Use for generating the Privacy Impact Assessment document, consent summaries, and weekly reports in a consistent format programmatically.</div>
+        <div class="card-meta"><strong>Source:</strong> python-docx.readthedocs.io</div>
+      </a>
+
+      <a class="card" href="https://fastapi.tiangolo.com/tutorial/body/" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">FastAPI — POST Endpoint + Pydantic Body (Official Docs)</div>
+        <div class="card-desc">Building POST /fieldworker/ask: request body schema with Pydantic, async handler, dependency injection. Add HTTPException for rate-limit and auth failures. Your Week 5 endpoint foundation.</div>
+        <div class="card-meta"><strong>Source:</strong> FastAPI official docs</div>
+      </a>
+
+      <a class="card" href="https://alembic.sqlalchemy.org/en/latest/tutorial.html" target="_blank" data-tags="docs tool" style="--card-accent:#64b464">
+        <div class="card-top"><div class="card-tags"><span class="tag tag-docs">DOCS</span></div><span class="card-arrow">↗</span></div>
+        <div class="card-title">SQLAlchemy / Alembic — Dependency-Ordered Migrations</div>
+        <div class="card-desc">For the erasure pipeline covering all 26 tables in correct FK dependency order. Alembic's dependency_resolver and downgrade() are how you safely cascade deletes without violating constraints.</div>
+        <div class="card-meta"><strong>Source:</strong> Alembic official docs</div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+let activeFilter = 'all';
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.card').forEach(card => {
+    const tags = card.dataset.tags || '';
+    const text = card.innerText.toLowerCase();
+    const matchFilter = activeFilter === 'all' || tags.includes(activeFilter);
+    const matchSearch = !q || text.includes(q);
+    card.classList.toggle('hidden', !(matchFilter && matchSearch));
+  });
+}
+</script>
+</body>
+</html>

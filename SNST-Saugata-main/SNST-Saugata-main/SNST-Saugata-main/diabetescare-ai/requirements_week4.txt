@@ -1,0 +1,32 @@
+# Week 4 - Saugata Malakar Part Requirements
+# Multimodal AI + Clinical NLP
+
+# Google Gemini for multimodal AI
+google-generativeai>=0.3.0
+
+# spaCy for Clinical NLP
+spacy>=3.7.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl
+
+# Image processing (PIL/Pillow)
+Pillow>=10.0.0
+
+# FastAPI and dependencies (if not already installed)
+fastapi>=0.104.0
+python-multipart>=0.0.6  # For file uploads in FastAPI
+uvicorn>=0.24.0
+
+# Database (if not already installed)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0  # PostgreSQL driver
+
+# Pydantic (if not already installed)
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Logging
+python-json-logger>=2.0.0
