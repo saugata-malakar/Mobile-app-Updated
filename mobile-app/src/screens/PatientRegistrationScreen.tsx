@@ -1,731 +1,336 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+// mobile-app/src/screens/PatientRegistrationScreen.tsx
+// Patient registration + consent collection for ASHA workers
+
+import React, { useState, useCallback } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  InteractionManager,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  View, Text, StyleSheet, ScrollView, TextInput,
+  TouchableOpacity, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RouteProp} from '@react-navigation/native';
-import type {RootStackParamList} from '../navigation/RootNavigator';
-import type {Gender, PatientProfile} from '../types/app';
-import {trySyncAshaPatientToServer} from '../services/patientRemoteSync';
-import {
-  getAshaPatient,
-  getPatientSelfProfile,
-  getSession,
-  listAshaPatients,
-  normalizePhone,
-  savePatientSelfProfile,
-  upsertAshaPatient,
-} from '../storage/appStorage';
-import {SCREENING_DISCLAIMER} from '../utils/openTelemedicine';
-import {setPatientOnboarding} from '../storage/onboardingStorage';
+import { useNavigation } from '@react-navigation/native';
+import { DiabetesCareAPI, PatientRegisterPayload } from '../services/api';
 
-type Props = {
-  navigation: NativeStackNavigationProp<
-    RootStackParamList,
-    'PatientRegistration'
-  >;
-  route: RouteProp<RootStackParamList, 'PatientRegistration'>;
-};
+const NAVY  = '#1F3864';
+const GREEN = '#2ECC71';
+const WHITE = '#FFFFFF';
+const GREY  = '#F5F6FA';
+const RED   = '#E74C3C';
 
-const emptyForm = () => ({
-  fullName: '',
-  age: '',
-  gender: '' as Gender,
-  phone: '',
-  address: '',
-  village: '',
-  emergencyContact: '',
-  bloodGroup: '',
-  allergies: '',
-  chronicConditions: '',
-});
+const CONSENT_TYPES = [
+  { key: 'clinical',    label: 'Clinical Care',     desc: 'Data used for your medical treatment.' },
+  { key: 'research',    label: 'Research Use',       desc: 'Anonymised data used for health research.' },
+  { key: 'ai_training', label: 'AI Model Training',  desc: 'Your images help train diagnostic AI models.' },
+];
 
-export default function PatientRegistrationScreen({navigation, route}: Props) {
-  const flow = route.params?.flow ?? 'first_time';
-  const editPatientId = route.params?.ashaPatientId;
+const DIABETES_TYPES = [
+  { key: 'type2',       label: 'Type 2' },
+  { key: 'type1',       label: 'Type 1' },
+  { key: 'gestational', label: 'Gestational' },
+  { key: 'unknown',     label: 'Unknown' },
+];
 
-  const isAshaPatientForm = flow === 'asha_new' || flow === 'asha_edit';
+const GENDER_OPTIONS = [
+  { key: 'male',   label: 'Male' },
+  { key: 'female', label: 'Female' },
+  { key: 'other',  label: 'Other' },
+];
 
-  const [form, setForm] = useState(emptyForm());
-  const [saving, setSaving] = useState(false);
+export default function PatientRegistrationScreen() {
+  const navigation = useNavigation<any>();
 
-  const header = useMemo(() => {
-    if (flow === 'asha_new') {
-      return {
-        title: 'Patient Registration',
-        sub: 'রোগী নিবন্ধন',
-        hint: 'Register once, use anytime',
-      };
-    }
-    if (flow === 'asha_edit') {
-      return {
-        title: 'Edit patient',
-        sub: 'রোগী সম্পাদনা',
-        hint: 'Update details and save',
-      };
-    }
-    if (flow === 'patient_edit') {
-      return {title: 'Your health profile', sub: '', hint: ''};
-    }
-    return {title: 'Patient registration', sub: '', hint: ''};
-  }, [flow]);
+  // ── Form state ────────────────────────────────────────────────────────────
+  const [fullName,    setFullName]    = useState('');
+  const [phone,       setPhone]       = useState('');
+  const [age,         setAge]         = useState('');
+  const [gender,      setGender]      = useState<string>('female');
+  const [district,    setDistrict]    = useState('');
+  const [diabetesType, setDiabetesType] = useState('type2');
+  const [hba1c,       setHba1c]       = useState('');
+  const [bpSys,       setBpSys]       = useState('');
+  const [bpDia,       setBpDia]       = useState('');
+  const [operatorId,  setOperatorId]  = useState('');
+  const [consents,    setConsents]    = useState<Record<string, boolean>>({
+    clinical: true, research: false, ai_training: false,
+  });
+  const [submitting, setSubmitting]   = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const session = await getSession();
-      if (!session) {
-        navigation.replace('RoleSelect');
-        return;
-      }
-      if (flow === 'first_time' || flow === 'patient_edit') {
-        const existing = await getPatientSelfProfile(session.phone);
-        if (cancelled) {
-          return;
-        }
-        if (existing) {
-          setForm({
-            fullName: existing.fullName,
-            age: existing.age,
-            gender: existing.gender,
-            phone: existing.phone,
-            address: existing.address,
-            village: existing.village,
-            emergencyContact: existing.emergencyContact,
-            bloodGroup: existing.bloodGroup,
-            allergies: existing.allergies,
-            chronicConditions: existing.chronicConditions,
-          });
-        } else if (flow === 'first_time') {
-          setForm(f => ({...f, phone: session.phone}));
-        }
-      }
-      if ((flow === 'asha_edit' || flow === 'asha_new') && session.role === 'asha') {
-        if (flow === 'asha_edit' && editPatientId) {
-          const p = await getAshaPatient(session.phone, editPatientId);
-          if (p && !cancelled) {
-            setForm({
-              fullName: p.fullName,
-              age: p.age,
-              gender: p.gender,
-              phone: p.phone,
-              address: p.address,
-              village: p.village,
-              emergencyContact: p.emergencyContact,
-              bloodGroup: p.bloodGroup,
-              allergies: p.allergies,
-              chronicConditions: p.chronicConditions,
-            });
-          }
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [editPatientId, flow, navigation]);
+  const toggleConsent = useCallback((key: string) => {
+    setConsents(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
-  const set =
-    (key: keyof ReturnType<typeof emptyForm>) => (v: string) =>
-      setForm(f => ({...f, [key]: v}));
+  // ── Validation ────────────────────────────────────────────────────────────
+  const validate = (): string | null => {
+    if (!fullName.trim()) return 'Patient name is required.';
+    if (!age || isNaN(Number(age)) || Number(age) < 1 || Number(age) > 120)
+      return 'Valid age (1–120) is required.';
+    if (!consents.clinical)
+      return 'Clinical consent is required to collect data.';
+    if (!operatorId.trim())
+      return 'Please enter your ASHA worker / operator ID.';
+    return null;
+  };
 
-  const save = useCallback(async () => {
-    const session = await getSession();
-    if (!session) {
-      navigation.replace('RoleSelect');
-      return;
-    }
-    if (!form.fullName.trim() || !form.age.trim() || !form.phone.trim()) {
-      Alert.alert('Required', 'Name, age, and phone are required.');
-      return;
-    }
-    if (session.role === 'asha' && (flow === 'asha_new' || flow === 'asha_edit') && !form.gender) {
-      Alert.alert('Required', 'Please select gender / লিঙ্গ নির্বাচন করুন।');
-      return;
-    }
-    const phone = normalizePhone(form.phone);
-    setSaving(true);
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const handleSubmit = useCallback(async () => {
+    const err = validate();
+    if (err) { Alert.alert('Missing Information', err); return; }
+
+    setSubmitting(true);
     try {
-      if (session.role === 'patient') {
-        const prev = await getPatientSelfProfile(session.phone);
-        const id =
-          prev?.id ??
-          `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-        const profile: PatientProfile = {
-          id,
-          fullName: form.fullName.trim(),
-          age: form.age.trim(),
-          gender: form.gender,
-          phone,
-          address: form.address.trim(),
-          village: form.village.trim(),
-          emergencyContact: form.emergencyContact.trim(),
-          bloodGroup: form.bloodGroup.trim(),
-          allergies: form.allergies.trim(),
-          chronicConditions: form.chronicConditions.trim(),
-          registeredAt: prev?.registeredAt ?? Date.now(),
-        };
-        await savePatientSelfProfile(profile);
-        await setPatientOnboarding(session.phone, {profileDone: true});
-        if (flow === 'first_time') {
-          navigation.replace('MedicalHistorySetup', {onboarding: true});
-        } else {
-          navigation.replace('PatientHome');
-        }
-        return;
-      }
+      const payload: PatientRegisterPayload = {
+        full_name:      fullName.trim(),
+        phone:          phone.trim() || undefined,
+        age:            Number(age),
+        gender:         gender as any,
+        district:       district.trim() || undefined,
+        diabetes_type:  diabetesType as any,
+        hba1c:          hba1c ? parseFloat(hba1c) : undefined,
+        bp_systolic:    bpSys ? parseInt(bpSys) : undefined,
+        bp_diastolic:   bpDia ? parseInt(bpDia) : undefined,
+        consents_granted: Object.entries(consents)
+          .filter(([, v]) => v).map(([k]) => k),
+        registered_by:  operatorId.trim(),
+      };
 
-      if (session.role === 'asha' && (flow === 'asha_new' || flow === 'asha_edit')) {
-        const base: PatientProfile = {
-          id:
-            flow === 'asha_edit' && editPatientId
-              ? editPatientId
-              : `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`,
-          fullName: form.fullName.trim(),
-          age: form.age.trim(),
-          gender: form.gender,
-          phone,
-          address: form.address.trim(),
-          village: form.village.trim(),
-          emergencyContact: form.emergencyContact.trim(),
-          bloodGroup: form.bloodGroup.trim(),
-          allergies: form.allergies.trim(),
-          chronicConditions: form.chronicConditions.trim(),
-          registeredAt:
-            flow === 'asha_edit' && editPatientId
-              ? (await getAshaPatient(session.phone, editPatientId))?.registeredAt ??
-                Date.now()
-              : Date.now(),
-        };
+      const res = await DiabetesCareAPI.registerPatient(payload);
 
-        const dup = (await listAshaPatients(session.phone)).some(
-          p => normalizePhone(p.phone) === phone && p.id !== base.id,
-        );
-        if (dup) {
-          Alert.alert(
-            'Duplicate phone',
-            'Another patient already uses this number in your list.',
-          );
-          return;
-        }
-        await upsertAshaPatient(session.phone, base);
-        /** Server sync is best-effort so registration never blocks on Flask / network. */
-        void trySyncAshaPatientToServer(base);
-        navigation.replace('AshaHome');
-        return;
-      }
-    } catch {
-      Alert.alert('Error', 'Could not save profile.');
+      // Create first visit immediately
+      const visit = await DiabetesCareAPI.createVisit({
+        patient_id:   res.patient_id,
+        conducted_by: operatorId.trim(),
+        location:     district.trim() || undefined,
+      });
+
+      // Navigate to photo capture flow
+      navigation.navigate('PhotoFlow', {
+        patientId:  res.patient_id,
+        visitId:    visit.visit_id,
+        operatorId: operatorId.trim(),
+      });
+
+    } catch (err: any) {
+      Alert.alert('Registration Failed', err.message || 'Please try again.');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
-  }, [editPatientId, flow, form, navigation]);
-
-  if (isAshaPatientForm) {
-    return (
-      <SafeAreaView style={stylesAsha.safe}>
-        <KeyboardAvoidingView
-          style={{flex: 1}}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={stylesAsha.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={stylesAsha.backBtn}>
-              <Text style={stylesAsha.backText}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={stylesAsha.headerTitle}>{header.title}</Text>
-            {header.sub ? <Text style={stylesAsha.headerBn}>{header.sub}</Text> : null}
-            <Text style={stylesAsha.headerHint}>
-              {header.hint}
-              {'\n'}
-              একবার নিবন্ধন করুন, যেকোনো সময় ব্যবহার করুন
-            </Text>
-          </View>
-
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            style={stylesAsha.scroll}
-            contentContainerStyle={stylesAsha.scrollInner}>
-            <Text style={stylesAsha.section}>Basic information / মৌলিক তথ্য</Text>
-
-            <FieldAsha
-              label="Full name / পূর্ণ নাম *"
-              value={form.fullName}
-              onChangeText={set('fullName')}
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            <FieldAsha
-              label="Mobile number / মোবাইল নম্বর *"
-              value={form.phone}
-              onChangeText={set('phone')}
-              keyboardType="phone-pad"
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            <FieldAsha
-              label="Age / বয়স *"
-              value={form.age}
-              onChangeText={set('age')}
-              keyboardType="number-pad"
-            />
-            <GenderRowAsha value={form.gender} onChange={g => setForm(f => ({...f, gender: g}))} />
-            <FieldAsha
-              label="Address / ঠিকানা *"
-              value={form.address}
-              onChangeText={set('address')}
-              multiline
-            />
-            <FieldAsha
-              label="Village / area / গ্রাম / এলাকা"
-              value={form.village}
-              onChangeText={set('village')}
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            <FieldAsha
-              label="Emergency contact / জরুরি যোগাযোগ"
-              value={form.emergencyContact}
-              onChangeText={set('emergencyContact')}
-              keyboardType="phone-pad"
-            />
-            <FieldAsha
-              label="Blood group / রক্তের গ্রুপ"
-              value={form.bloodGroup}
-              onChangeText={set('bloodGroup')}
-              placeholder="e.g. O+"
-            />
-            <FieldAsha
-              label="Known allergies / অ্যালার্জি"
-              value={form.allergies}
-              onChangeText={set('allergies')}
-              multiline
-            />
-            <FieldAsha
-              label="Chronic conditions / স্থায়ী রোগ"
-              value={form.chronicConditions}
-              onChangeText={set('chronicConditions')}
-              multiline
-            />
-
-            <View style={stylesAsha.infoBox}>
-              <Text style={stylesAsha.infoText}>
-                প্রথম স্ক্রিনিংয়ের পর প্রোফাইলে যোগ করা যাবে: ডায়াবেটিস, রক্তচাপ, অ্যালার্জি, ABHA
-                স্বাস্থ্য ID ইত্যাদি।
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              disabled={saving}
-              onPress={save}
-              style={[stylesAsha.primary, saving && stylesAsha.primaryDisabled]}>
-              {saving ? (
-                <View style={stylesAsha.rowCenter}>
-                  <ActivityIndicator color="#FFFFFF" style={{marginRight: 10}} />
-                  <Text style={stylesAsha.primaryText}>Saving… / সংরক্ষণ…</Text>
-                </View>
-              ) : (
-                <Text style={stylesAsha.primaryText}>
-                  {flow === 'asha_edit'
-                    ? 'Save changes / পরিবর্তন সংরক্ষণ'
-                    : 'Register and continue / নিবন্ধন করে এগিয়ে যান'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    );
-  }
+  }, [fullName, phone, age, gender, district, diabetesType,
+      hba1c, bpSys, bpDia, consents, operatorId]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scroll}>
-          <Text style={styles.title}>{header.title}</Text>
-          <Text style={styles.sub}>
-            Enter details once. Follow-up visits skip this step—select the same patient from your
-            portal or home screen.
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+        <View style={styles.header}>
+          <Text style={styles.title}>Patient Registration</Text>
+          <Text style={styles.subtitle}>DiabetesCare AI · ORELA Lab, IIT Kharagpur</Text>
+        </View>
+
+        {/* ── Operator ID ───────────────────────────────────────────────── */}
+        <Section title="Operator">
+          <Field label="Your ASHA Worker / Operator ID *">
+            <TextInput style={styles.input} value={operatorId}
+              onChangeText={setOperatorId} placeholder="e.g. ASHA_WB_0042" />
+          </Field>
+        </Section>
+
+        {/* ── Patient Info ──────────────────────────────────────────────── */}
+        <Section title="Patient Information">
+          <Field label="Full Name *">
+            <TextInput style={styles.input} value={fullName}
+              onChangeText={setFullName} placeholder="Patient full name"
+              autoCapitalize="words" />
+          </Field>
+          <Field label="Phone Number">
+            <TextInput style={styles.input} value={phone}
+              onChangeText={setPhone} placeholder="+91 XXXXXXXXXX"
+              keyboardType="phone-pad" />
+          </Field>
+          <View style={styles.row}>
+            <Field label="Age *" flex={1}>
+              <TextInput style={styles.input} value={age}
+                onChangeText={setAge} placeholder="Age"
+                keyboardType="number-pad" />
+            </Field>
+            <View style={{ width: 12 }} />
+            <Field label="District" flex={2}>
+              <TextInput style={styles.input} value={district}
+                onChangeText={setDistrict} placeholder="e.g. Paschim Medinipur" />
+            </Field>
+          </View>
+
+          <Field label="Gender">
+            <View style={styles.optionRow}>
+              {GENDER_OPTIONS.map(g => (
+                <OptionChip
+                  key={g.key}
+                  label={g.label}
+                  selected={gender === g.key}
+                  onPress={() => setGender(g.key)}
+                />
+              ))}
+            </View>
+          </Field>
+        </Section>
+
+        {/* ── Diabetes Profile ──────────────────────────────────────────── */}
+        <Section title="Diabetes Profile">
+          <Field label="Diabetes Type">
+            <View style={styles.optionRow}>
+              {DIABETES_TYPES.map(d => (
+                <OptionChip
+                  key={d.key}
+                  label={d.label}
+                  selected={diabetesType === d.key}
+                  onPress={() => setDiabetesType(d.key)}
+                />
+              ))}
+            </View>
+          </Field>
+          <View style={styles.row}>
+            <Field label="HbA1c %" flex={1}>
+              <TextInput style={styles.input} value={hba1c}
+                onChangeText={setHba1c} placeholder="e.g. 8.5"
+                keyboardType="decimal-pad" />
+            </Field>
+            <View style={{ width: 12 }} />
+            <Field label="BP Systolic" flex={1}>
+              <TextInput style={styles.input} value={bpSys}
+                onChangeText={setBpSys} placeholder="mmHg"
+                keyboardType="number-pad" />
+            </Field>
+            <View style={{ width: 12 }} />
+            <Field label="BP Diastolic" flex={1}>
+              <TextInput style={styles.input} value={bpDia}
+                onChangeText={setBpDia} placeholder="mmHg"
+                keyboardType="number-pad" />
+            </Field>
+          </View>
+        </Section>
+
+        {/* ── Consent ───────────────────────────────────────────────────── */}
+        <Section title="Consent (DPDP Act 2023)">
+          <Text style={styles.consentNote}>
+            Explain each option to the patient before collecting consent.
           </Text>
+          {CONSENT_TYPES.map(c => (
+            <View key={c.key} style={styles.consentRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={styles.consentLabel}>{c.label}</Text>
+                <Text style={styles.consentDesc}>{c.desc}</Text>
+              </View>
+              <Switch
+                value={!!consents[c.key]}
+                onValueChange={() => toggleConsent(c.key)}
+                trackColor={{ true: NAVY, false: '#DDD' }}
+                thumbColor={WHITE}
+              />
+            </View>
+          ))}
+        </Section>
 
-          <Field
-            label="Full name *"
-            value={form.fullName}
-            onChangeText={set('fullName')}
-            autoCorrect={false}
-            spellCheck={false}
-          />
-          <Field
-            label="Age *"
-            value={form.age}
-            onChangeText={set('age')}
-            keyboardType="number-pad"
-          />
-          <GenderRow value={form.gender} onChange={g => setForm(f => ({...f, gender: g}))} />
-          <Field
-            label="Mobile number *"
-            value={form.phone}
-            onChangeText={set('phone')}
-            keyboardType="phone-pad"
-            autoCorrect={false}
-            spellCheck={false}
-          />
-          <Field label="Address *" value={form.address} onChangeText={set('address')} multiline />
-          <Field
-            label="Village / area"
-            value={form.village}
-            onChangeText={set('village')}
-            autoCorrect={false}
-            spellCheck={false}
-          />
-          <Field
-            label="Emergency contact"
-            value={form.emergencyContact}
-            onChangeText={set('emergencyContact')}
-            keyboardType="phone-pad"
-          />
-          <Field
-            label="Blood group"
-            value={form.bloodGroup}
-            onChangeText={set('bloodGroup')}
-            placeholder="e.g. O+"
-          />
-          <Field
-            label="Known allergies"
-            value={form.allergies}
-            onChangeText={set('allergies')}
-            multiline
-          />
-          <Field
-            label="Chronic conditions / medications"
-            value={form.chronicConditions}
-            onChangeText={set('chronicConditions')}
-            multiline
-          />
+        {/* ── Submit ────────────────────────────────────────────────────── */}
+        <TouchableOpacity
+          style={[styles.submitButton, submitting && styles.disabled]}
+          onPress={handleSubmit}
+          disabled={submitting}
+          activeOpacity={0.8}>
+          {submitting
+            ? <ActivityIndicator color={WHITE} />
+            : <Text style={styles.submitText}>Register & Start Photo Collection</Text>
+          }
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={saving}
-            onPress={save}
-            style={[styles.primary, saving && styles.primaryDisabled]}>
-            <Text style={styles.primaryText}>{saving ? 'Saving…' : 'Save profile'}</Text>
-          </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => navigation.goBack()}
-            style={styles.secondary}>
-            <Text style={styles.secondaryText}>Cancel</Text>
-          </TouchableOpacity>
+// ── Sub-components ─────────────────────────────────────────────────────────
 
-          {(flow === 'first_time' || flow === 'patient_edit') && (
-            <Text style={styles.regDisclaimer}>{SCREENING_DISCLAIMER}</Text>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
   );
 }
 
 function Field({
-  label,
-  value,
-  onChangeText,
-  keyboardType,
-  multiline,
-  placeholder,
-  autoCorrect,
-  spellCheck,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
-  multiline?: boolean;
-  placeholder?: string;
-  autoCorrect?: boolean;
-  spellCheck?: boolean;
-}) {
+  label, children, flex,
+}: { label: string; children: React.ReactNode; flex?: number }) {
   return (
-    <View style={styles.field} collapsable={false}>
-      <Text style={styles.lab}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        placeholder={placeholder}
-        autoCorrect={autoCorrect ?? true}
-        spellCheck={spellCheck ?? true}
-        placeholderTextColor="rgba(148,163,184,0.85)"
-        style={[styles.input, multiline && {minHeight: 80, textAlignVertical: 'top'}]}
-      />
+    <View style={{ flex, marginBottom: 12 }}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {children}
     </View>
   );
 }
 
-function FieldAsha({
-  label,
-  value,
-  onChangeText,
-  keyboardType,
-  multiline,
-  placeholder,
-  autoCorrect,
-  spellCheck,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
-  multiline?: boolean;
-  placeholder?: string;
-  autoCorrect?: boolean;
-  spellCheck?: boolean;
-}) {
+function OptionChip({
+  label, selected, onPress,
+}: { label: string; selected: boolean; onPress: () => void }) {
   return (
-    <View style={stylesAsha.field} collapsable={false}>
-      <Text style={stylesAsha.lab}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        placeholder={placeholder}
-        autoCorrect={autoCorrect ?? false}
-        spellCheck={spellCheck ?? false}
-        placeholderTextColor="rgba(71,85,105,0.85)"
-        style={[stylesAsha.input, multiline && {minHeight: 80, textAlignVertical: 'top'}]}
-      />
-    </View>
+    <TouchableOpacity
+      style={[styles.chip, selected && styles.chipSelected]}
+      onPress={onPress}
+      activeOpacity={0.7}>
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
-function GenderRow({
-  value,
-  onChange,
-}: {
-  value: Gender;
-  onChange: (g: Gender) => void;
-}) {
-  const opts: {key: Gender; label: string}[] = [
-    {key: 'male', label: 'Male'},
-    {key: 'female', label: 'Female'},
-    {key: 'other', label: 'Other'},
-  ];
-  return (
-    <View style={styles.field} collapsable={false}>
-      <Text style={styles.lab}>Gender</Text>
-      <View style={styles.genderRow}>
-        {opts.map(o => {
-          const active = value === o.key;
-          return (
-            <TouchableOpacity
-              key={o.key}
-              activeOpacity={0.9}
-              onPress={() => onChange(o.key)}
-              style={[styles.gChip, active && styles.gChipOn]}>
-              <Text style={[styles.gChipText, active && styles.gChipTextOn]}>{o.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function GenderRowAsha({
-  value,
-  onChange,
-}: {
-  value: Gender;
-  onChange: (g: Gender) => void;
-}) {
-  const opts: {key: Gender; label: string}[] = [
-    {key: 'male', label: 'Male / পুরুষ'},
-    {key: 'female', label: 'Female / মহিলা'},
-    {key: 'other', label: 'Other / অন্যান্য'},
-  ];
-  return (
-    <View style={stylesAsha.field} collapsable={false}>
-      <Text style={stylesAsha.lab}>Gender / লিঙ্গ</Text>
-      <View style={stylesAsha.genderRow}>
-        {opts.map(o => {
-          const active = value === o.key;
-          return (
-            <TouchableOpacity
-              key={o.key}
-              activeOpacity={0.9}
-              onPress={() => onChange(o.key)}
-              style={[stylesAsha.gChip, active && stylesAsha.gChipOn]}>
-              <Text style={[stylesAsha.gChipText, active && stylesAsha.gChipTextOn]}>{o.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-const stylesAsha = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#E8F1FF'},
-  header: {
-    backgroundColor: '#1D4ED8',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  backBtn: {alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 8},
-  backText: {color: '#FFFFFF', fontWeight: '800', fontSize: 16},
-  headerTitle: {color: '#FFFFFF', fontSize: 22, fontWeight: '900'},
-  headerBn: {color: 'rgba(255,255,255,0.95)', fontSize: 18, fontWeight: '800', marginTop: 4},
-  headerHint: {
-    color: 'rgba(255,255,255,0.88)',
-    fontSize: 13,
-    marginTop: 8,
-    lineHeight: 18,
-  },
-  scroll: {flex: 1, backgroundColor: '#F8FAFC'},
-  scrollInner: {padding: 18, paddingBottom: 36},
-  section: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 12,
-  },
-  field: {marginBottom: 12},
-  lab: {
-    color: '#334155',
-    fontWeight: '700',
-    marginBottom: 6,
-    fontSize: 13,
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.5)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#0F172A',
-    backgroundColor: '#FFFFFF',
-  },
-  genderRow: {flexDirection: 'row', gap: 8},
-  gChip: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.45)',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  gChipOn: {
-    borderColor: '#2563EB',
-    backgroundColor: 'rgba(37,99,235,0.12)',
-  },
-  gChipText: {color: '#475569', fontWeight: '800', fontSize: 12},
-  gChipTextOn: {color: '#1E40AF'},
-  infoBox: {
-    marginTop: 4,
-    marginBottom: 14,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(59,130,246,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.25)',
-  },
-  infoText: {color: '#1E3A5F', fontSize: 13, lineHeight: 19},
-  primary: {
-    backgroundColor: '#2563EB',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  primaryDisabled: {opacity: 0.72},
-  primaryText: {color: '#FFFFFF', fontWeight: '900', fontSize: 15},
-  rowCenter: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
-});
-
+// ── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#0B1220'},
-  scroll: {padding: 20, paddingBottom: 36},
-  title: {fontSize: 22, fontWeight: '900', color: '#F8FAFC'},
-  sub: {
-    marginTop: 8,
-    marginBottom: 14,
-    fontSize: 13,
-    color: 'rgba(248,250,252,0.72)',
-    lineHeight: 18,
+  container:       { flex: 1, backgroundColor: GREY },
+  content:         { padding: 16, paddingBottom: 48 },
+
+  header:          { marginBottom: 20 },
+  title:           { fontSize: 24, fontWeight: '800', color: NAVY },
+  subtitle:        { fontSize: 13, color: '#888', marginTop: 4 },
+
+  section: {
+    backgroundColor: WHITE, borderRadius: 14,
+    padding: 16, marginBottom: 14,
+    shadowColor: '#000', shadowOpacity: 0.05,
+    shadowRadius: 6, elevation: 2,
   },
-  field: {marginBottom: 12},
-  lab: {
-    color: 'rgba(248,250,252,0.72)',
-    fontWeight: '700',
-    marginBottom: 6,
-    fontSize: 12,
-  },
+  sectionTitle:    { fontSize: 15, fontWeight: '700', color: NAVY, marginBottom: 14 },
+
+  row:             { flexDirection: 'row' },
+  fieldLabel:      { fontSize: 13, color: '#555', fontWeight: '600', marginBottom: 5 },
   input: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.22)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#F8FAFC',
-    backgroundColor: 'rgba(15,23,42,0.55)',
+    borderWidth: 1, borderColor: '#DDD', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 14, color: '#222', backgroundColor: WHITE,
   },
-  genderRow: {flexDirection: 'row', gap: 8},
-  gChip: {
-    flex: 1,
+
+  optionRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    borderWidth: 1.5, borderColor: '#CCC', borderRadius: 20,
+    paddingVertical: 6, paddingHorizontal: 14,
+  },
+  chipSelected:    { borderColor: NAVY, backgroundColor: NAVY },
+  chipText:        { fontSize: 13, color: '#555' },
+  chipTextSelected:{ color: WHITE, fontWeight: '700' },
+
+  consentNote:     { fontSize: 12, color: '#888', marginBottom: 12 },
+  consentRow: {
+    flexDirection: 'row', alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.22)',
-    alignItems: 'center',
-    backgroundColor: 'rgba(15,23,42,0.35)',
+    borderTopWidth: 1, borderTopColor: '#F0F0F0',
   },
-  gChipOn: {
-    borderColor: 'rgba(59,130,246,0.55)',
-    backgroundColor: 'rgba(37,99,235,0.25)',
+  consentLabel:    { fontSize: 14, fontWeight: '600', color: '#333' },
+  consentDesc:     { fontSize: 12, color: '#888', marginTop: 2 },
+
+  submitButton: {
+    backgroundColor: NAVY, borderRadius: 12,
+    paddingVertical: 17, alignItems: 'center', marginTop: 8,
   },
-  gChipText: {color: 'rgba(248,250,252,0.75)', fontWeight: '800', fontSize: 13},
-  gChipTextOn: {color: '#F8FAFC'},
-  primary: {
-    marginTop: 8,
-    backgroundColor: '#2563EB',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  primaryDisabled: {opacity: 0.65},
-  primaryText: {color: '#F8FAFC', fontWeight: '900', fontSize: 16},
-  secondary: {
-    marginTop: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.22)',
-  },
-  secondaryText: {color: '#F8FAFC', fontWeight: '800'},
-  regDisclaimer: {
-    marginTop: 16,
-    fontSize: 11,
-    color: 'rgba(148,163,184,0.9)',
-    lineHeight: 16,
-    fontStyle: 'italic',
-  },
+  submitText:      { color: WHITE, fontWeight: '800', fontSize: 16 },
+  disabled:        { opacity: 0.5 },
 });

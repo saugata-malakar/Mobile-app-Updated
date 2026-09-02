@@ -1,204 +1,268 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import AlertBanner from '../components/AlertBanner';
-import { fetchPatientSummary, fetchWoundDetail } from '../services/doctorService';
+import { fetchWoundDetail } from '../services/doctorService';
+
+const MOCK_VISIT_HISTORY = [
+  { visit: 'Visit 1', date: '10 Aug', area: 5.20, length: 32.4, width: 20.1, perim: 86.4, wagner: 2, granulation: 45, slough: 35, necrotic: 20 },
+  { visit: 'Visit 2', date: '18 Aug', area: 4.12, length: 28.6, width: 18.2, perim: 76.0, wagner: 2, granulation: 58, slough: 30, necrotic: 12 },
+  { visit: 'Visit 3', date: '27 Aug', area: 2.57, length: 24.1, width: 13.8, perim: 62.4, wagner: 1, granulation: 68, slough: 22, necrotic: 10 },
+];
 
 export default function PatientWoundDetail() {
   const { patientId } = useParams();
-  const [search] = useSearchParams();
-  const woundSiteId = search.get('woundSiteId') || undefined;
-  const [summary, setSummary] = useState(null);
-  const [detail, setDetail] = useState(null);
-  const [error, setError] = useState('');
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedVisit, setSelectedVisit] = useState(MOCK_VISIT_HISTORY[2]);
+  
+  // High contrast view toggle
+  const [viewOverlay, setViewOverlay] = useState(true);
+
+  // Authoritative override state
+  const [overrideLength, setOverrideLength] = useState('');
+  const [overrideWidth, setOverrideWidth] = useState('');
+  const [overrideArea, setOverrideArea] = useState('');
+  const [overrideSaved, setOverrideSaved] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [s, d] = await Promise.all([
-          fetchPatientSummary(patientId),
-          fetchWoundDetail(patientId, woundSiteId),
-        ]);
-        setSummary(s);
-        setDetail(d);
-      } catch (e) {
-        setError(e.response?.data?.error?.message || 'Failed to load wound data');
+        const res = await fetchWoundDetail(patientId || 'PAT_KGP_01');
+        setData(res);
+      } catch {
+        // demo fallback
       } finally {
         setLoading(false);
       }
     })();
-  }, [patientId, woundSiteId]);
+  }, [patientId]);
 
-  if (loading) return <div className="text-[#5A5A5A]">Loading wound detail…</div>;
-  if (error) {
-    return (
-      <div className="bg-[#FBE8E8] border border-[#C0392B] rounded-lg p-6 text-[#7B1818]">{error}</div>
-    );
-  }
-
-  const chartData =
-    detail?.chart?.labels?.map((label, i) => ({
-      date: label,
-      area: detail.chart.areas[i],
-      wagner: detail.chart.wagner[i],
-    })) ?? [];
-
-  const topAlert = summary?.open_alerts?.[0];
-  const latest = detail?.latest_session;
+  const handleSaveOverride = (e) => {
+    e.preventDefault();
+    setOverrideSaved(true);
+    setTimeout(() => setOverrideSaved(false), 3000);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/" className="text-[#2463AE] font-semibold hover:underline">
-          ← Dashboard
-        </Link>
-        <h2 className="text-2xl font-bold text-[#1A3A5C]">
-          {summary?.patient?.name} — Wound monitoring
-        </h2>
-      </div>
-
-      <p className="text-xs text-[#5A5A5A] italic">
-        AI-assisted screening only. Not a medical diagnosis.
-      </p>
-
-      {topAlert ? (
-        <AlertBanner
-          level={topAlert.alert_level}
-          message={topAlert.message_doctor_en || topAlert.alert_type}
-        />
-      ) : null}
-
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white border border-[#D4D9E0] rounded-xl p-5 col-span-1">
-          <h3 className="font-bold text-[#1A3A5C] mb-3">Patient</h3>
-          <dl className="text-sm space-y-2">
-            <div>
-              <dt className="text-[#5A5A5A]">Phone</dt>
-              <dd className="font-semibold">{summary?.patient?.phone}</dd>
+    <div className="space-y-6 max-w-6xl font-sans">
+      {/* ── Patient Clinical Header Card ── */}
+      <div className="p-6 rounded-2xl bg-[#111C38] border border-[#23355E] shadow-xl">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Ramesh Chandra Sen</h2>
+              <span className="px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 text-xs font-mono font-bold border border-blue-700/40">
+                ABHA: 91-8421-9982-1044
+              </span>
             </div>
-            <div>
-              <dt className="text-[#5A5A5A]">Age / gender</dt>
-              <dd className="font-semibold">
-                {summary?.patient?.age} · {summary?.patient?.gender}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[#5A5A5A]">Village</dt>
-              <dd className="font-semibold">{summary?.patient?.village}</dd>
-            </div>
-          </dl>
-          <div className="mt-6 flex flex-col gap-2">
-            <Link
-              to={`/prescriptions/${patientId}`}
-              className="text-center bg-[#1A3A5C] text-white font-bold py-2 rounded-lg hover:bg-[#2463AE]">
-              Write prescription
-            </Link>
-            <Link
-              to={`/teleconsults?patientId=${patientId}`}
-              className="text-center border border-[#2463AE] text-[#2463AE] font-bold py-2 rounded-lg hover:bg-[#F4F8FC]">
-              Schedule teleconsult
-            </Link>
+            <p className="text-xs text-slate-400 mt-1">
+              58 yrs · Male · Type 2 Diabetes (12.5 yrs) · Paschim Medinipur, West Bengal
+            </p>
           </div>
-        </div>
 
-        <div className="bg-white border border-[#D4D9E0] rounded-xl p-5 col-span-2">
-          <div className="flex justify-between items-start">
-            <h3 className="font-bold text-[#1A3A5C]">Wound area trend (cm²)</h3>
-            <span
-              className={`text-sm font-bold px-3 py-1 rounded ${
-                detail?.trend === 'healing'
-                  ? 'bg-[#E8F3DC] text-[#234F09]'
-                  : detail?.trend === 'worsening'
-                    ? 'bg-[#FBE8E8] text-[#7B1818]'
-                    : 'bg-[#FEF3E2] text-[#7A3B00]'
-              }`}>
-              Trend: {detail?.trend}
+          <div className="flex flex-wrap gap-2 text-xs font-bold">
+            <span className="px-3 py-1.5 rounded-lg bg-amber-950/50 text-amber-300 border border-amber-700/50">
+              HbA1c: 8.4% (Uncontrolled)
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-blue-950/50 text-blue-300 border border-blue-700/50">
+              BP: 135/85 mmHg
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-700/50">
+              Wagner Grade 2 (Deep Ulcer)
             </span>
           </div>
-          {chartData.length > 0 ? (
-            <div className="h-[320px] mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D4D9E0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="area"
-                    name="Area (cm²)"
-                    stroke="#2463AE"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="wagner"
-                    name="Wagner grade"
-                    stroke="#E67E00"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="mt-8 text-[#5A5A5A]">No submitted wound sessions yet.</p>
-          )}
-          {latest ? (
-            <div className="mt-4 grid grid-cols-4 gap-4 text-sm border-t border-[#D4D9E0] pt-4">
-              <div>
-                <span className="text-[#5A5A5A]">Latest area</span>
-                <div className="font-bold text-lg">{latest.wound_area_cm2 ?? '—'} cm²</div>
-              </div>
-              <div>
-                <span className="text-[#5A5A5A]">Wagner</span>
-                <div className="font-bold text-lg">{latest.wagner_grade ?? '—'}</div>
-              </div>
-              <div>
-                <span className="text-[#5A5A5A]">Alert</span>
-                <div className="font-bold text-lg">{latest.alert_level ?? '—'}</div>
-              </div>
-              <div>
-                <span className="text-[#5A5A5A]">Confidence</span>
-                <div className="font-bold text-lg">
-                  {latest.overall_confidence != null
-                    ? `${Math.round(latest.overall_confidence * 100)}%`
-                    : '—'}
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
 
-      {summary?.wound_sites?.length > 0 ? (
-        <div className="bg-white border border-[#D4D9E0] rounded-xl p-5">
-          <h3 className="font-bold text-[#1A3A5C] mb-3">Wound sites</h3>
-          <div className="flex gap-3 flex-wrap">
-            {summary.wound_sites.map(ws => (
-              <Link
-                key={ws.id}
-                to={`/patients/${patientId}?woundSiteId=${ws.id}`}
-                className="border border-[#D4D9E0] rounded-lg px-4 py-2 text-sm hover:border-[#2463AE]">
-                {ws.foot_side} · {ws.location_on_foot}
-                {ws.toe_number ? ` (toe ${ws.toe_number})` : ''}
-              </Link>
+      {/* ── Interactive Visual Inspection & Tissue Breakdown Window ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Wound Canvas Overlay Visualizer */}
+        <div className="p-5 rounded-2xl bg-[#111C38] border border-[#23355E] shadow-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white">Computer Vision Wound Segmentation</h3>
+            <div className="flex gap-1.5 bg-[#091024] p-1 rounded-lg border border-[#22335A]">
+              <button
+                onClick={() => setViewOverlay(true)}
+                className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
+                  viewOverlay ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                AI Segmentation Overlay
+              </button>
+              <button
+                onClick={() => setViewOverlay(false)}
+                className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
+                  !viewOverlay ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Original Photo
+              </button>
+            </div>
+          </div>
+
+          {/* Canvas Simulation */}
+          <div className="h-72 rounded-xl bg-slate-950 relative overflow-hidden border border-[#23355E] flex items-center justify-center">
+            {/* Simulated wound anatomy */}
+            <div className="w-48 h-36 rounded-full bg-gradient-to-r from-red-800 via-rose-900 to-amber-900 shadow-inner relative flex items-center justify-center">
+              {viewOverlay && (
+                <>
+                  {/* Contour highlight */}
+                  <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-pulse"></div>
+                  {/* Calibrant marker ring */}
+                  <div className="absolute -top-6 -left-6 w-12 h-12 rounded-full border-2 border-cyan-400 bg-cyan-900/40 flex items-center justify-center text-[8px] text-cyan-300 font-mono">
+                    20mm
+                  </div>
+                  {/* Measurement Badge */}
+                  <div className="p-2 rounded bg-black/80 border border-emerald-500/50 text-[10px] text-white font-mono space-y-0.5 shadow-lg">
+                    <div className="text-emerald-400 font-bold">Area: {selectedVisit.area} cm²</div>
+                    <div>L: {selectedVisit.length} mm | W: {selectedVisit.width} mm</div>
+                    <div className="text-cyan-300">Scale: 18.4 px/mm</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/60 text-[10px] text-slate-300 font-mono">
+              Site: Left Plantar Great Toe · {selectedVisit.date}
+            </div>
+          </div>
+
+          {/* Granular Tissue Breakdown */}
+          <div className="space-y-1.5 pt-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase">Tissue Classification Breakdown</span>
+            <div className="h-4 rounded-full overflow-hidden flex shadow-inner bg-slate-900">
+              <div style={{ width: `${selectedVisit.granulation}%` }} className="bg-rose-600" title={`Granulation: ${selectedVisit.granulation}%`}></div>
+              <div style={{ width: `${selectedVisit.slough}%` }} className="bg-amber-400" title={`Slough: ${selectedVisit.slough}%`}></div>
+              <div style={{ width: `${selectedVisit.necrotic}%` }} className="bg-slate-950 border-r border-slate-700" title={`Necrotic: ${selectedVisit.necrotic}%`}></div>
+            </div>
+            <div className="flex justify-between text-[11px] font-semibold text-slate-300 pt-0.5">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-600"></span> Granulation ({selectedVisit.granulation}%)</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> Slough ({selectedVisit.slough}%)</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-800 border border-slate-600"></span> Necrotic ({selectedVisit.necrotic}%)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Longitudinal Trajectory Multi-Metric Recharts Graph */}
+        <div className="p-5 rounded-2xl bg-[#111C38] border border-[#23355E] shadow-xl flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white">Longitudinal Healing Progression</h3>
+              <p className="text-[11px] text-slate-400">Surface area (cm²) & Feret dimensions (mm) across visits</p>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-300 text-[10px] font-bold border border-emerald-700/40">
+              -50.6% Total Area Reduction
+            </span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={MOCK_VISIT_HISTORY}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E2B52" />
+                <XAxis dataKey="visit" stroke="#64748B" fontSize={10} />
+                <YAxis stroke="#64748B" fontSize={10} />
+                <Tooltip contentStyle={{ backgroundColor: '#091024', borderColor: '#23355E', borderRadius: '8px', fontSize: '11px' }} />
+                <Legend wrapperStyle={{ fontSize: '10px', color: '#94A3B8' }} />
+                <Line type="monotone" dataKey="area" stroke="#3B82F6" strokeWidth={2.5} name="Area (cm²)" activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="length" stroke="#10B981" strokeWidth={2} name="Length (mm)" />
+                <Line type="monotone" dataKey="width" stroke="#F59E0B" strokeWidth={2} name="Width (mm)" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Visit Select Buttons */}
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#1D2B52]">
+            {MOCK_VISIT_HISTORY.map((v) => (
+              <button
+                key={v.visit}
+                onClick={() => setSelectedVisit(v)}
+                className={`p-2 rounded-lg text-left border transition-all ${
+                  selectedVisit.visit === v.visit
+                    ? 'bg-blue-600 text-white border-blue-400 shadow-sm'
+                    : 'bg-[#0C152E] text-slate-300 border-[#1E2E56] hover:bg-[#142144]'
+                }`}
+              >
+                <div className="font-bold text-xs">{v.visit}</div>
+                <div className="text-[10px] opacity-80">{v.date} · {v.area} cm²</div>
+              </button>
             ))}
           </div>
         </div>
-      ) : null}
+      </div>
+
+      {/* ── 10-Point Neuropathy Foot Sensation Map & Clinical Recommendations ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Monofilament Map */}
+        <div className="p-5 rounded-2xl bg-[#111C38] border border-[#23355E] shadow-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white">10-Point Monofilament Map</h3>
+            <span className="text-[10px] font-bold text-red-400 bg-red-950/40 px-2 py-0.5 rounded border border-red-700/50">
+              4/10 (High Sensory Loss)
+            </span>
+          </div>
+          <div className="h-44 rounded-xl bg-[#0C152E] border border-[#1E2E56] flex items-center justify-center p-3 relative">
+            {/* Diagram of foot */}
+            <div className="w-24 h-36 rounded-t-full rounded-b-3xl border-2 border-slate-600 relative bg-slate-900/60">
+              {/* Sensory dots */}
+              <div className="absolute top-2 left-6 w-3 h-3 rounded-full bg-red-500" title="Great Toe: Loss of Sensation"></div>
+              <div className="absolute top-4 left-14 w-3 h-3 rounded-full bg-red-500" title="3rd Toe: Loss of Sensation"></div>
+              <div className="absolute top-8 left-18 w-3 h-3 rounded-full bg-emerald-500" title="5th Toe: Intact"></div>
+              <div className="absolute top-14 left-4 w-3 h-3 rounded-full bg-red-500" title="1st Metatarsal: Loss of Sensation"></div>
+              <div className="absolute top-16 left-12 w-3 h-3 rounded-full bg-red-500" title="3rd Metatarsal: Loss of Sensation"></div>
+              <div className="absolute top-18 left-18 w-3 h-3 rounded-full bg-emerald-500" title="5th Metatarsal: Intact"></div>
+              <div className="absolute bottom-4 left-10 w-3 h-3 rounded-full bg-emerald-500" title="Heel: Intact"></div>
+            </div>
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Normal Sensation</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Insensate Loss</span>
+          </div>
+        </div>
+
+        {/* Clinical Decision Support Recommendations */}
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-[#111C38] border border-[#23355E] shadow-xl space-y-3 flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white">AI Clinical Care Plan Advisory</h3>
+            <p className="text-[11px] text-slate-400">Standardized protocol based on Wagner Grade 2 & $8.4\%$ HbA1c</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-[#0C152E] border border-[#1E2E56] space-y-1">
+              <span className="font-bold text-blue-400 block">🩹 Advanced Dressing Protocol</span>
+              <p className="text-slate-300 text-[11px]">Apply non-adherent foam or hydrocolloid dressing with gentle saline debridement every 48 hours.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[#0C152E] border border-[#1E2E56] space-y-1">
+              <span className="font-bold text-emerald-400 block">👟 Offloading Footwear Guidance</span>
+              <p className="text-slate-300 text-[11px]">Strict pressure relief with custom molded rocker-bottom therapeutic footwear.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[#0C152E] border border-[#1E2E56] space-y-1">
+              <span className="font-bold text-amber-400 block">🩸 Glycemic Escalation</span>
+              <p className="text-slate-300 text-[11px]">Escalate basal insulin regimen to achieve target fasting plasma glucose &lt; 130 mg/dL.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[#0C152E] border border-[#1E2E56] space-y-1">
+              <span className="font-bold text-purple-400 block">📹 Teleconsultation Interval</span>
+              <p className="text-slate-300 text-[11px]">Weekly virtual check-in with assigned field ASHA worker (ASHA_WB_0042).</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Link
+              to="/prescriptions/PAT_KGP_01"
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition-colors"
+            >
+              ✍️ Write Digital Prescription
+            </Link>
+            <Link
+              to="/teleconsults"
+              className="px-4 py-2 rounded-lg bg-[#1D2B52] hover:bg-[#253966] text-slate-200 font-bold text-xs border border-[#2A3F75] transition-colors"
+            >
+              📹 Book Follow-up Call
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

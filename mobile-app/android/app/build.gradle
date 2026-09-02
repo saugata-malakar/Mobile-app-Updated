@@ -104,7 +104,10 @@ android {
     }
 }
 
-apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
+def vectorIconsFonts = file("../../node_modules/react-native-vector-icons/fonts.gradle")
+if (vectorIconsFonts.exists()) {
+    apply from: vectorIconsFonts
+}
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd doctor-dashboard && npm install && npm run build",
+  "outputDirectory": "doctor-dashboard/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

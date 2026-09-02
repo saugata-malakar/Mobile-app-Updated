@@ -1,12 +1,6 @@
-import React, {useEffect} from 'react';
-import RootNavigator from './src/navigation/RootNavigator';
-import {startOfflineQueueFlush} from './src/services/offlineSync';
+import React from 'react';
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
-  useEffect(() => {
-    const unsub = startOfflineQueueFlush();
-    return unsub;
-  }, []);
-
-  return <RootNavigator />;
+  return <AppNavigator />;
 }
