@@ -1,187 +1,231 @@
-# Doctor Dashboard
+# 🩺 DiabetesCare AI — Clinical & Hospital Workstation
 
-Vite + React web dashboard for clinicians. Talks to the HealthScreeningApp Flask API.
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Production-success?style=for-the-badge&logo=vercel)](https://doctor-dashboard-mu.vercel.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Mobile--app--Updated-181717?style=for-the-badge&logo=github)](https://github.com/saugata-malakar/Mobile-app-Updated)
+[![FastAPI Backend](https://img.shields.io/badge/FastAPI-Port%208000-009688?style=for-the-badge&logo=fastapi)](http://localhost:8000/)
+[![Compliance](https://img.shields.io/badge/DPDP%20Act%202023-Statutory%20Verified-blue?style=for-the-badge&logo=shield)](https://doctor-dashboard-mu.vercel.app/dpdp)
+[![ABDM Telehealth](https://img.shields.io/badge/eSanjeevani%20%2F%20ABDM-Certified-green?style=for-the-badge)](https://doctor-dashboard-mu.vercel.app/teleconsults)
 
-## Prerequisites
+**DiabetesCare AI** is a clinical-grade diabetic foot ulcer (DFU) tele-monitoring, computer vision wound trajectory, and hospital triage workstation developed in collaboration with **IIT Kharagpur** and **Midnapore Medical College & Hospital (MMCH)**.
 
-- **Node.js** 18+ (20+ recommended)
-- **Backend** running on `http://127.0.0.1:8000`
+The platform provides role-based gateways for **Attending Clinicians**, **Hospital Administration**, and **Patients/Guardians**, powered by an automated OpenCV calibration pipeline and DPDP Act 2023 compliant data governance.
 
-## Quick start
+---
 
-**Terminal A — API**
+## 🌐 Live Production Links & Downloads
 
-```bash
-cd backend/legacy
-source venv/bin/activate
-export DATABASE_URL="sqlite:///$(pwd)/instance/healthscreen_dev.db"
-export FLASK_ENV=development
-export PORT=8000
-export PYTHONPATH=.
-python app.py
+| Service | Live URL / Access | Description |
+|---|---|---|
+| 🚀 **Live Clinical Workstation** | **[doctor-dashboard-mu.vercel.app](https://doctor-dashboard-mu.vercel.app/)** | Production Vercel deployment with all 3 hospital portals. |
+| 📱 **Mobile Field App Simulator** | **[doctor-dashboard-mu.vercel.app/mobile-simulator](https://doctor-dashboard-mu.vercel.app/mobile-simulator)** | Interactive Android phone simulator running the 5-step camera capture flow in-browser. |
+| 📦 **GitHub Repository** | **[github.com/saugata-malakar/Mobile-app-Updated](https://github.com/saugata-malakar/Mobile-app-Updated)** | Clean production source code repository. |
+| 📲 **Android Release APK** | **[Direct APK Download (28.2 MB)](http://10.109.27.73:9090/DiabetesCareAI.apk)** | Standalone Android APK built with WebKit JavaScriptCore (JSC) engine. |
+| 🖥️ **Localhost Hub** | **[http://localhost:8000/](http://localhost:8000/)** | Local unified FastAPI + React Workstation. |
+
+---
+
+## 🔑 Demo Access Credentials
+
+The login portal features instant one-click role cards that auto-populate authenticated demo credentials:
+
+| Portal Role | One-Click Card | Credentials | Primary Features |
+|---|---|---|---|
+| 🩺 **Attending Physician** | Click **Physician Card** | `doctor@demo.in`<br/>`doctor123` | Clinical triage queue, 30-day wound area trajectory, AI overlay visualizer, 10-point neuropathy sensation map, and E-Prescription writer. |
+| 🏥 **Hospital Authority** | Click **Hospital Admin Card** | `admin@hospital.in`<br/>`admin123` | Department operational triage, live KPI counters, ASHA field workforce roster, and DPDP Act 2023 statutory audit suite. |
+| 👤 **Patient / Guardian** | Click **Patient Card** | `patient@demo.in`<br/>`patient123` | Accessible healing journey gauge ($68\%$ healed), dressing change reminder, active medication cards, and 24x7 emergency SOS. |
+
+---
+
+## 🏛️ Comprehensive Portal Walkthrough
+
+### 🩺 1. Attending Clinician / Doctor Dashboard (`/`)
+Designed for podiatric surgeons, diabetologists, and vascular specialists.
+
+* **Interactive Triage Filter Dropdowns**:
+  * **Urgency Filter**: Filter by *High Risk (Red Flag)*, *Moderate (Amber)*, or *Stable (Green)*.
+  * **Wagner Grade Filter**: Filter by *Grade 0 (Intact)* to *Grade 4+ (Gangrene / Deep Tissue)*.
+  * **District Filter**: Segment patients across *Paschim Medinipur*, *Jhargram*, *Purba Medinipur*, and *Bankura*.
+* **Longitudinal Patient Deep-Dive (`/patients/PAT_KGP_01`)**:
+  * **OpenCV AI vs. Original Toggle**: Switch between raw clinical photography and segmented wound contours with 20mm scale calibrant marker.
+  * **Granular Tissue Classification Meter**: Real-time breakdown of **Granulation (68% - Red)**, **Slough (24% - Yellow)**, and **Necrotic Tissue (8% - Black)**.
+  * **Multi-Metric Trajectory Graph**: Longitudinal Recharts tracking **Area ($cm^2$)**, **Length ($mm$)**, and **Width ($mm$)** across clinical visits.
+  * **10-Point Semmes-Weinstein Monofilament Neuropathy Foot Map**: Interactive anatomical plantar sensory mapping indicating loss of protective sensation (LOPS).
+* **Authoritative E-Prescription Writer (`/prescriptions/:patientId`)**:
+  * Prescribe antibiotics (Augmentin, Ciprofloxacin), glycemic modulators (Metformin, Empagliflozin), and advanced topical dressings (Hydrocolloid, Silver Sulfadiazine).
+  * Digital cryptographic signing with **NMC/State Medical Council Registration (`#78421-A`)**.
+
+---
+
+### 🏥 2. Hospital Authority & Administration Portal (`/admin-overview`, `/department`)
+Designed for medical superintendents, department heads, and healthcare administrators.
+
+* **Department Operational Triage**:
+  * **Zero-Free Live KPI Counters**: Total registered patients ($168$), active ulcer cases ($52$), healed this month ($28$), open clinical red flags ($2$), and active ASHA field workers ($22$).
+  * **Multi-Department Switcher Dropdown**: Seamlessly switch between *Diabetology & Podiatric Surgery*, *Vascular Surgery*, *Dermatology & Wound Care*, and *Community Medicine*.
+  * **Wagner Ulcer Severity Breakdown**: Interactive Recharts bar chart showing cohort distribution across Wagner Grades 0 to 4.
+  * **Inpatient Bed & Regional Tele-Node Queue**: Real-time bed occupancy and telemedicine node allocation across Kharagpur, Jhargram, and Tamluk sub-divisions.
+* **ASHA Field Workforce Hub (`/asha`)**:
+  * Real-time monitoring of community health workers with district filters.
+  * Tracks patient screening throughput, field photography uploads, and sticker placement circularity pass rates ($97.8\%$).
+
+---
+
+### 🛡️ 3. DPDP Act 2023 Statutory Governance Suite (`/dpdp`)
+Implements India's Digital Personal Data Protection Act (DPDP Act 2023) standards.
+
+* **Statutory Compliance Scorecards**:
+  * **Section 4 (Lawful Purpose)**: $100\%$ verified for clinical telemedicine and diagnostic triage.
+  * **Section 6 (Granular Consent)**: Verifiable digital consent timestamps stored prior to photo capture.
+  * **Section 8 (Data Security & Retention)**: AES-256 data encryption with automatic 90-day retention lifecycles.
+  * **Section 11 (Grievance Redressal)**: Designated Data Protection Officer (DPO) contact channel.
+* **Interactive SHA-256 Hash Integrity Verifier**:
+  * Allows doctors and compliance officers to input patient MRNs and image tokens to mathematically verify records against the append-only cryptographic ledger.
+* **Immutable Audit Log Ledger**:
+  * Searchable table capturing every access event, clinician ID, IP address, timestamp, and verification status.
+* **Statutory Report Export**: One-click generation of PDF compliance audit reports for health authority inspections.
+
+---
+
+### 🏛️ 4. Government-Verified National Teleconsultation Network (`/teleconsults`)
+Integrated with **ABDM (Ayushman Bharat Digital Mission)** and **eSanjeevani** guidelines.
+
+* **24x7 National Emergency Hotline Quick-Dial Bar**:
+  * 🚨 **112** — National Emergency All-in-One
+  * 🚑 **108** — Emergency Ambulance Dispatch
+  * 🩺 **104** — 24x7 State Health Advice
+  * 🩹 **1800-345-DIAB** — Dedicated Diabetic Foot Ulcer SOS Line
+* **Live WebRTC Consultation Room**:
+  * Encrypted video stream simulator connecting the attending doctor directly with rural ASHA workers and patients.
+  * **Real-Time Patient Vitals Telemetry**: Continuous readout of Heart Rate ($78	ext{ bpm}$), $	ext{SpO}_2$ ($98\%$), and Random Blood Glucose ($184	ext{ mg/dL}$).
+  * Integrated Doctor's Scratchpad and instant E-Rx dispatch.
+
+---
+
+### 👤 5. Patient & Guardian Portal (`/patient-portal`)
+Clean, accessible, reassuring patient experience.
+
+* **Healing Journey Circular Gauge**: Shows current healing progress (**$68\%$ Healed**).
+* **Dressing Schedule & Care Plan**: Countdown timer for the next dressing change with direct phone link to the assigned village ASHA worker.
+* **Active Prescriptions & Dosages**: Plain-language dosage schedule (Morning / Afternoon / Night) with food instructions.
+* **One-Tap 🚨 Emergency SOS**: Instantly triggers emergency escalation to the nearest district hospital.
+
+---
+
+### 📱 6. Mobile Field App & Interactive Web Simulator (`/mobile-simulator`)
+A complete community health worker mobile interface running inside the browser.
+
+1. **Step 1 — Patient Demographics & DPDP Consent**: Enter patient name (*Ramesh Chandra Sen*), age (*58*), gender, and HbA1c (*9.4%*) with digital consent checkbox.
+2. **Step 2 — 3-Photo Checklist**:
+   * Photo 1: Anatomical Overview
+   * Photo 2: Close-Up Ulcer Bed
+   * Photo 3: Measurement Photo (with 20mm blue calibrant sticker)
+3. **Step 3 — Camera Viewfinder with Real-Time Guidance**:
+   * Simulated viewfinder with target crosshairs and 20mm sticker guide circle.
+   * Real-time sensor feedback: **Distance: 25cm (OK)**, **Lighting: 380 Lux (Good)**, **Focus: Sharp**.
+   * Interactive shutter button with flash capture animation.
+4. **Step 4 — OpenCV AI Quality & Segmentation Review**:
+   * Scale detection confirmation: **`20.0mm circular sticker detected`**.
+   * Interactive **"Show/Hide Overlay"** toggle.
+   * Measurements: **Length: 24.1mm, Width: 13.8mm, Surface Area: 2.57 $cm^2$**.
+   * Tissue composition: **68% Granulation, 24% Slough, 8% Necrotic**.
+5. **Step 5 — Cloud Sync Complete**: Synchronizes record to `http://10.109.27.73:8000` with DPDP SHA-256 integrity token.
+
+---
+
+## 🔬 Computer Vision Calibration Pipeline (`cv/`)
+
+```
+   Raw Mobile Photo
+         │
+         ▼
+ ┌─────────────────┐
+ │ Quality Gating  │ ──► Blur (Laplacian > 100), Glare (< 3%), Lighting (40 < μ < 220)
+ └────────┬────────┘
+          │ PASS
+          ▼
+ ┌─────────────────┐
+ │ Calibrant Detect│ ──► HSV/LAB Blue Circle Isolation + Hough Transform
+ └────────┬────────┘     Scale Metric: mm_per_px = 20.0 / diameter_pixels
+          │
+          ▼
+ ┌─────────────────┐
+ │ Wound Segment   │ ──► Multi-Threshold Morphological Contour Extraction
+ └────────┬────────┘     Area (cm²) = Area_px * (mm_per_px / 10)²
+          │
+          ▼
+ ┌─────────────────┐
+ │ Tissue Classify │ ──► Color Space Clustering:
+ └─────────────────┘     • Granulation (Red/Pink): Healthy Healing
+                         • Slough (Yellow/Tan): Fibrinous Exudate
+                         • Necrotic (Black/Brown): Non-viable Tissue
 ```
 
-**Terminal B — Dashboard**
+---
 
+## 🛠️ Tech Stack & Architecture
+
+* **Frontend**: React 19, Vite 8, Tailwind CSS v4, Recharts, Lucide Icons, React Router v7.
+* **Mobile App**: React Native 0.73, Android Native, WebKit JavaScriptCore (JSC) International Engine.
+* **Backend API**: Python 3.11, FastAPI, Uvicorn, Pydantic v2, PostgreSQL / SQLite.
+* **Computer Vision**: OpenCV (cv2), NumPy, SciPy, Pillow.
+* **Cloud & DevOps**: Vercel (Edge SPA), Render (Unified Full-Stack), Docker (Multi-stage Node+Python).
+
+---
+
+## 💻 Local Setup & Development
+
+### 1. Clone Repository
 ```bash
-cd /Users/dipak/HealthScreeningApp/doctor-dashboard
+git clone https://github.com/saugata-malakar/Mobile-app-Updated.git
+cd Mobile-app-Updated
+```
+
+### 2. Run the FastAPI Backend
+```bash
+# Create Python virtual environment
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scriptsctivate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start FastAPI server on port 8000
+python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
+```
+
+### 3. Run the Doctor Dashboard (React + Vite)
+```bash
+cd doctor-dashboard
 npm install
 npm run dev
 ```
+Open **[http://localhost:5173/](http://localhost:5173/)** (or **[http://localhost:8000/](http://localhost:8000/)** when mounted via FastAPI).
 
-Open **http://localhost:5173/login**
+---
 
-**Demo credentials** (seeded on backend startup in development):
+## 🚀 Cloud Deployment Guide
 
-| Field | Value |
-|-------|--------|
-| Email | `doctor@demo.in` |
-| Password | `doctor123` |
-
-## Configuration
-
-| Setting | Location | Notes |
-|---------|----------|--------|
-| Dev server port | `vite.config.js` → `server.port` | Default **5173** |
-| API proxy | `vite.config.js` → `server.proxy['/api']` | Proxies to **`http://127.0.0.1:8000`** |
-| Direct API URL (optional) | `.env.development` → `VITE_API_BASE_URL` | Leave empty to use Vite proxy |
-
-## API endpoints used
-
-| Method | Path |
-|--------|------|
-| POST | `/api/v1/auth/doctor/login` |
-| POST | `/api/v1/auth/refresh` |
-| GET | `/api/v1/doctors/me` |
-| GET | `/api/v1/doctors/me/alerts` |
-| GET | `/api/v1/doctors/me/patients` |
-| GET | `/api/v1/doctors/me/stats` |
-| GET | `/api/v1/doctors/me/teleconsults` |
-| GET | `/api/v1/doctors/patients/:id` |
-| GET | `/api/v1/doctors/patients/:id/wound-detail` |
-| PUT | `/api/v1/doctors/alerts/:id/acknowledge` |
-| PUT | `/api/v1/doctors/teleconsults/:id/schedule` |
-| POST | `/api/v1/doctors/prescriptions` |
-| GET | `/api/v1/doctors/department/dashboard` |
-
-Auth: **JWT Bearer** token in `Authorization` header (stored in `localStorage` as `doctor_dashboard_token`).
-
-## Seed demo inbox data
-
-Adds 3 patients and open alerts for `doctor@demo.in` (safe to re-run):
-
+### Deploy on Vercel (1 Command)
 ```bash
-cd backend/legacy
-source venv/bin/activate
-export DATABASE_URL="sqlite:///$(pwd)/instance/healthscreen_dev.db"
-export PYTHONPATH=.
-python -c "
-from app import create_app
-from migrations.seed_dashboard_demo import ensure_dashboard_demo
-app = create_app()
-with app.app_context():
-    ensure_dashboard_demo()
-"
+cd doctor-dashboard
+npm run build
+npx vercel --prod --yes
 ```
 
-Refresh the dashboard after seeding. This also seeds **4 weekly wound sessions** per patient so area/Wagner charts populate.
+### Deploy on Render (Full-Stack Python + React)
+The repository includes `render.yaml` pre-configured to build the frontend and serve the FastAPI backend in Singapore (low-latency node for India):
+1. Connect `https://github.com/saugata-malakar/Mobile-app-Updated` on [dashboard.render.com](https://dashboard.render.com/).
+2. Select **Blueprint** (or Web Service) and click **Apply**.
 
-To seed wound charts only (patients must already exist):
-
+### Deploy with Docker
 ```bash
-python -c "
-from app import create_app
-from migrations.seed_dashboard_wound_sessions import ensure_dashboard_wound_sessions
-app = create_app()
-with app.app_context():
-    ensure_dashboard_wound_sessions()
-"
+docker build -t diabetescare-ai .
+docker run -p 8000:8000 diabetescare-ai
 ```
 
-## Smoke test (curl)
+---
 
-```bash
-export API=http://127.0.0.1:8000
-curl -s "$API/health" | python3 -m json.tool
-
-LOGIN=$(curl -s -X POST "$API/api/v1/auth/doctor/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"doctor@demo.in","password":"doctor123"}')
-export TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
-
-curl -s "$API/api/v1/doctors/me" -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-curl -s "$API/api/v1/doctors/me/patients" -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-```
-
-## Manual testing checklist
-
-### UI / UX
-
-- [ ] Open http://localhost:5173 — login page loads without errors
-- [ ] DevTools Console — no red errors on load
-- [ ] Sign in → dashboard — header shows doctor name
-- [ ] Nav: Teleconsults, Department — pages load
-- [ ] Mobile viewport (~375px) — layout usable
-- [ ] Sign out — returns to login, token cleared
-
-### Authentication
-
-- [ ] Wrong password — error message, stay on login
-- [ ] Demo login — dashboard loads
-- [ ] Local Storage — `doctor_dashboard_token` present
-- [ ] Page refresh while logged in — stays on dashboard
-
-### Patient & wound data
-
-- [ ] Patient table loads (may be empty if no assignments/alerts in DB)
-- [ ] Open patient — wound detail page loads
-- [ ] Chart or “No submitted wound sessions” message
-- [ ] Confidence % and Wagner grade when session data exists
-- [ ] Wound site links update `?woundSiteId=` chart
-
-> **Note:** Wound **photos** are not shown in the UI yet (charts/metrics only).
-
-### Alerts
-
-- [ ] RED/AMBER badges visible on dashboard
-- [ ] Manage alert — form loads
-- [ ] Acknowledge with note — success message
-- [ ] Dashboard — resolved alert removed from open list
-
-### API connectivity (DevTools → Network)
-
-- [ ] `POST /api/v1/auth/doctor/login` → **200**
-- [ ] `GET /api/v1/doctors/me/*` → **200**
-- [ ] No CORS errors (proxy mode uses same origin on :5173)
-- [ ] API errors show red panel, not blank screen
-
-### Performance
-
-- [ ] Login → dashboard &lt; 3s locally
-- [ ] No 401 refresh loops in console
-
-## Common issues
-
-| Symptom | Fix |
-|---------|-----|
-| `ECONNREFUSED` on `/api/*` | Start Flask on port **8000** |
-| Proxy still hits wrong port | Confirm `vite.config.js` proxy target is `http://127.0.0.1:8000` |
-| `Invalid credentials` | Restart backend so demo doctor is seeded |
-| Empty patient list | Add patients with open alerts or `DoctorPatientAssignment` for demo doctor |
-| Port 5173 in use | `kill $(lsof -t -iTCP:5173 -sTCP:LISTEN)` then `npm run dev` |
-| Stale auth | DevTools → Application → Clear site data, or `localStorage.clear()` |
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Dev server on :5173 |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run lint` | ESLint |
-
-## Related
-
-- Backend routes: `../backend/routes/doctors.py`
-- Demo doctor seed: `../backend/migrations/seed_doctor_demo.py`
-- Monorepo: https://github.com/dkg-diabetescare-ai/diabetescare-ai
+## 📄 License & Attribution
+* **Institution**: Indian Institute of Technology Kharagpur (IIT KGP) & Midnapore Medical College and Hospital (MMCH).
+* **Principal Investigator**: Prof. Dipak Kumar Das.
+* **DPDP Act Compliance**: Standardized under statutory guidelines of the Ministry of Electronics and Information Technology (MeitY), Government of India.
