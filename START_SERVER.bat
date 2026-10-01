@@ -18,6 +18,6 @@ echo.
 echo Starting FastAPI Master Backend on http://0.0.0.0:8000 ...
 echo Mobile devices on your Wi-Fi will connect to: http://192.168.31.94:8000
 echo.
-set PYTHONPATH=%~dp0Mobile-app-Updated;%PYTHONPATH%
+set PYTHONPATH=%~dp0;%~dp0Mobile-app-Updated;%PYTHONPATH%
 python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
 pause
