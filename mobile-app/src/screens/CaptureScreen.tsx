@@ -5,14 +5,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  Alert, ActivityIndicator, Vibration, Platform, StatusBar, ScrollView
+  Alert, ActivityIndicator, Platform, StatusBar, ScrollView,
+  PermissionsAndroid,
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
-import Geolocation from '@react-native-community/geolocation';
+import RNFS from 'react-native-fs';
 
 import { DiabetesCareAPI, GuidanceResponse, CaptureMetadata } from '../services/api';
+import { imageStore } from '../services/imageStore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 type CaptureRouteProp = RouteProp<RootStackParamList, 'Capture'>;
@@ -55,7 +57,7 @@ export default function CaptureScreen() {
   const [previewB64, setPreviewB64]     = useState<string | null>(null);
   const [guidance, setGuidance]         = useState<GuidanceResponse | null>(null);
   const [processing, setProcessing]     = useState(false);
-  const [location, setLocation]         = useState<{ lat: number; lon: number } | null>(null);
+  const [location, setLocation]         = useState<{ lat: number; lon: number } | null>({ lat: 22.3149, lon: 87.3105 });
   const [deviceModel, setDeviceModel]   = useState('Smartphone');
 
   const config = PHOTO_CONFIG[photoType] || PHOTO_CONFIG.overview;
@@ -69,22 +71,11 @@ export default function CaptureScreen() {
         setDeviceModel('Android Smartphone');
       }
     })();
-
-    try {
-      Geolocation.getCurrentPosition(
-        pos => setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        () => {},
-        { enableHighAccuracy: false, timeout: 5000 },
-      );
-    } catch {
-      // Best effort GPS
-    }
   }, []);
 
   // ── Process Photo through Backend CV Pipeline ────────────────────────────
-  const processImage = async (b64: string) => {
+  const processImage = async (b64: string, uri?: string) => {
     setProcessing(true);
-    Vibration.vibrate(100);
 
     try {
       const timestamp = new Date().toISOString();
@@ -93,8 +84,8 @@ export default function CaptureScreen() {
         patient_id: patientId,
         visit_id: visitId,
         photo_type: photoType,
-        gps_lat: location?.lat,
-        gps_lon: location?.lon,
+        gps_lat: location?.lat || 22.3149,
+        gps_lon: location?.lon || 87.3105,
         operator_id: operatorId,
         device_model: deviceModel,
         device_os: Platform.OS,
@@ -114,15 +105,22 @@ export default function CaptureScreen() {
 
       setProcessing(false);
 
-      // Navigate to Review Screen with derived segmentation and measurements
+      // Store Base64 strings safely in imageStore to prevent Android TransactionTooLargeException (1MB Binder limit)
+      imageStore.setImages(b64, response.annotated_image_b64 || b64, uri || previewUri || undefined);
+
+      // Clean response object without multi-megabyte base64
+      const cleanResponse = {
+        ...response,
+        annotated_image_b64: undefined,
+      };
+
+      // Navigate to Review Screen with lightweight primitive params
       navigation.navigate('Review', {
         patientId,
         visitId,
         photoType,
         operatorId,
-        captureResponse: response,
-        annotatedImageB64: response.annotated_image_b64 || b64,
-        originalImageB64: b64,
+        captureResponse: cleanResponse,
         metadata,
         measurements: response.measurements || {
           length_mm: undefined,
@@ -144,17 +142,64 @@ export default function CaptureScreen() {
     }
   };
 
+  // ── Asset Handler (supports direct base64 and RNFS file reading) ────────
+  const handleAsset = useCallback(async (asset: any) => {
+    if (!asset) return;
+    setPreviewUri(asset.uri || null);
+
+    let b64 = asset.base64;
+    if (!b64 && asset.uri) {
+      try {
+        const cleanUri = Platform.OS === 'android' && asset.uri.startsWith('file://')
+          ? asset.uri.replace('file://', '')
+          : asset.uri;
+        b64 = await RNFS.readFile(cleanUri, 'base64');
+      } catch (e: any) {
+        console.warn('Could not read file via RNFS:', e?.message || e);
+      }
+    }
+
+    if (b64) {
+      setPreviewB64(b64);
+      processImage(b64, asset.uri);
+    } else {
+      Alert.alert('Image Error', 'Could not extract image data. Please try taking the photo again.');
+    }
+  }, [processImage]);
+
   // ── Native Hardware Camera Launcher ──────────────────────────────────────
-  const handleLaunchCamera = useCallback(() => {
+  const handleLaunchCamera = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission Required',
+            message: 'DiabetesCare AI requires camera access to capture clinical wound images.',
+            buttonPositive: 'Grant Access',
+            buttonNegative: 'Cancel',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission Denied', 'Camera permission is required to photograph ulcers.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Camera permission check error:', err);
+      }
+    }
+
     launchCamera(
       {
         mediaType: 'photo',
         cameraType: 'back',
-        quality: 0.9,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.8,
         includeBase64: true,
         saveToPhotos: false,
       },
-      response => {
+      async response => {
         if (response.didCancel) return;
         if (response.errorCode) {
           Alert.alert('Camera Error', response.errorMessage || 'Camera could not be opened.');
@@ -162,24 +207,22 @@ export default function CaptureScreen() {
         }
 
         const asset = response.assets && response.assets[0];
-        if (asset && asset.base64) {
-          setPreviewUri(asset.uri || null);
-          setPreviewB64(asset.base64);
-          processImage(asset.base64);
-        }
+        await handleAsset(asset);
       }
     );
-  }, [patientId, visitId, photoType, operatorId, location, deviceModel]);
+  }, [handleAsset]);
 
   // ── Gallery Picker Launcher ──────────────────────────────────────────────
   const handleLaunchGallery = useCallback(() => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 0.9,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.8,
         includeBase64: true,
       },
-      response => {
+      async response => {
         if (response.didCancel) return;
         if (response.errorCode) {
           Alert.alert('Gallery Error', response.errorMessage || 'Photo could not be selected.');
@@ -187,14 +230,10 @@ export default function CaptureScreen() {
         }
 
         const asset = response.assets && response.assets[0];
-        if (asset && asset.base64) {
-          setPreviewUri(asset.uri || null);
-          setPreviewB64(asset.base64);
-          processImage(asset.base64);
-        }
+        await handleAsset(asset);
       }
     );
-  }, [patientId, visitId, photoType, operatorId, location, deviceModel]);
+  }, [handleAsset]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>

@@ -18,13 +18,19 @@ export default function SuccessScreen() {
       <Text style={sc.icon}>✅</Text>
       <Text style={sc.title}>Data Collection Complete</Text>
       <Text style={sc.subtitle}>
-        All photos captured and uploaded securely.{'\n'}
-        AI analysis is processing in the background.
+        Photo & clinical metrics saved successfully.{'\n'}
+        Stored in local database & stored_photos/ folder.
       </Text>
-      <Text style={sc.patientId}>Patient ID: {patientId.slice(-12)}</Text>
+      <Text style={sc.patientId}>Patient ID: {patientId}</Text>
 
       <TouchableOpacity
         style={sc.button}
+        onPress={() => navigation.navigate('DoctorCommandHub', { userRole: 'doctor' })}>
+        <Text style={sc.buttonText}>Return to Clinical Command Hub</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[sc.button, { backgroundColor: '#334155', marginTop: 12 }]}
         onPress={() => navigation.navigate('PatientRegistration')}>
         <Text style={sc.buttonText}>Register Next Patient</Text>
       </TouchableOpacity>
@@ -33,14 +39,14 @@ export default function SuccessScreen() {
 }
 
 const sc = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: '#F5F6FA', justifyContent: 'center', alignItems: 'center', padding: 32 },
-  icon:       { fontSize: 64, marginBottom: 20 },
-  title:      { fontSize: 24, fontWeight: '800', color: '#1F3864', marginBottom: 10, textAlign: 'center' },
-  subtitle:   { fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
-  patientId:  { fontSize: 12, color: '#AAA', marginBottom: 32 },
+  container:  { flex: 1, backgroundColor: '#0B132B', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  icon:       { fontSize: 60, marginBottom: 16 },
+  title:      { fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginBottom: 8, textAlign: 'center' },
+  subtitle:   { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  patientId:  { fontSize: 12, color: '#64748B', marginBottom: 28, fontFamily: 'monospace' },
   button: {
-    backgroundColor: '#1F3864', borderRadius: 12,
-    paddingVertical: 16, paddingHorizontal: 40,
+    backgroundColor: '#2563EB', borderRadius: 10,
+    paddingVertical: 14, paddingHorizontal: 30, width: '100%', alignItems: 'center',
   },
-  buttonText: { color: '#FFF', fontWeight: '800', fontSize: 15 },
+  buttonText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
 });

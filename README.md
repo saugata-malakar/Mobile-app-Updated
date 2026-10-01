@@ -19,8 +19,8 @@ The platform provides role-based gateways for **Attending Clinicians**, **Hospit
 | 🚀 **Live Clinical Workstation** | **[doctor-dashboard-mu.vercel.app](https://doctor-dashboard-mu.vercel.app/)** | Production Vercel deployment with all 3 hospital portals. |
 | 📱 **Mobile Field App Simulator** | **[doctor-dashboard-mu.vercel.app/mobile-simulator](https://doctor-dashboard-mu.vercel.app/mobile-simulator)** | Interactive Android phone simulator running the 5-step camera capture flow in-browser. |
 | 📦 **GitHub Repository** | **[github.com/saugata-malakar/Mobile-app-Updated](https://github.com/saugata-malakar/Mobile-app-Updated)** | Clean production source code repository. |
-| 📲 **Android Release APK** | **[Direct APK Download (28.2 MB)](http://10.109.27.73:9090/DiabetesCareAI.apk)** | Standalone Android APK built with WebKit JavaScriptCore (JSC) engine. |
-| 🖥️ **Localhost Hub** | **[http://localhost:8000/](http://localhost:8000/)** | Local unified FastAPI + React Workstation. |
+| 📲 **Android Release APK** | **[DiabetesCareAI.apk (29.5 MB)](https://github.com/saugata-malakar/Mobile-app-Updated/blob/main/DiabetesCareAI.apk)** | Standalone Android APK with camera autofocus, OpenCV calibration, and PyTorch Wagner AI model. |
+| 🖥️ **Localhost Hub & API** | **[http://localhost:8000/](http://localhost:8000/)** · **[API Docs](http://localhost:8000/docs)** | Local unified FastAPI Master Backend, SQLite storage, and Clinical Portal. |
 
 ---
 

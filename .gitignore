@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+*/node_modules/
 venv/
 ENV/
 env/
@@ -8,6 +9,9 @@ env/
 # Build & dist
 dist/
 build/
+android/app/build/
+android/.gradle/
+.gradle/
 .expo/
 .next/
 out/
@@ -24,6 +28,11 @@ __pycache__/
 .env.*.local
 secrets.json
 credentials.json
+local.properties
+
+# Redundant nested archive backups
+SNST-Saugata-main/
+*/SNST-Saugata-main/
 
 # IDE
 .vscode/
@@ -41,14 +50,9 @@ logs/
 *.log
 npm-debug.log*
 
-# Data
+# Large temporary archives
 data/
 datasets/
 *.zip
 *.tar.gz
 
-# Models (too large)
-models/
-*.pth
-*.h5
-*.onnx
