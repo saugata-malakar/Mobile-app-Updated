@@ -1,12 +1,13 @@
 // mobile-app/src/screens/PhotoFlowScreen.tsx
-// Guides ASHA worker through 3 mandatory photos in sequence
+// Guides Doctor / ASHA worker through 3 mandatory photos in sequence.
+// Enforces: Overview → Close-Up → Measurement — ALL required before Review.
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Platform,
+  ScrollView, Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 type PhotoFlowRoute = RouteProp<RootStackParamList, 'PhotoFlow'>;
@@ -41,15 +42,80 @@ export default function PhotoFlowScreen() {
   const navigation = useNavigation<any>();
   const route      = useRoute<PhotoFlowRoute>();
   const { patientId, visitId, operatorId } = route.params;
-  const [done, setDone] = useState<Record<string, boolean>>({});
 
-  const allDone = PHOTO_STEPS.every(s => done[s.type]);
+  // Track which photos are done and store their capture results
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  const captureResults = useRef<Record<string, any>>({});
+
+  // When CaptureScreen finishes, it navigates back to PhotoFlow with completedPhotoType & captureResult
+  useFocusEffect(
+    useCallback(() => {
+      const params = route.params as any;
+      if (params?.completedPhotoType && params?.captureResult) {
+        const photoType = params.completedPhotoType;
+        const result    = params.captureResult;
+
+        setDone(prev => {
+          if (prev[photoType]) return prev; // already marked, skip
+          return { ...prev, [photoType]: true };
+        });
+
+        captureResults.current[photoType] = result;
+
+        // Clear the params so we don't re-process on next focus
+        navigation.setParams({ completedPhotoType: undefined, captureResult: undefined });
+      }
+    }, [route.params]),
+  );
+
+  const completedCount = PHOTO_STEPS.filter(s => done[s.type]).length;
+  const allDone = completedCount === PHOTO_STEPS.length;
+
+  const handleCapture = (photoType: 'overview' | 'close_up' | 'measurement') => {
+    navigation.navigate('Capture', {
+      patientId,
+      visitId,
+      operatorId,
+      photoType,
+      returnToPhotoFlow: true, // signal CaptureScreen to return here
+    });
+  };
+
+  const handleComplete = () => {
+    if (!allDone) {
+      const missing = PHOTO_STEPS.filter(s => !done[s.type]).map(s => s.title).join(', ');
+      Alert.alert(
+        'Photos Missing',
+        `Please capture all 3 required photos before proceeding.\n\nMissing: ${missing}`,
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    // Use measurement photo's capture result (most clinically important)
+    // Fall back to last completed photo if measurement not done somehow
+    const primaryResult =
+      captureResults.current['measurement'] ||
+      captureResults.current['close_up'] ||
+      captureResults.current['overview'] ||
+      {};
+
+    navigation.navigate('Review', {
+      patientId,
+      visitId,
+      operatorId,
+      photoType: 'measurement',
+      captureResponse: primaryResult.captureResponse,
+      metadata: primaryResult.metadata,
+      measurements: primaryResult.measurements,
+    });
+  };
 
   return (
     <ScrollView style={pf.container} contentContainerStyle={pf.content}>
       <Text style={pf.heading}>Photo Collection</Text>
       <Text style={pf.subheading}>
-        3 photos required · Complete all steps
+        All 3 photos required before submitting · {completedCount}/3 captured
       </Text>
 
       {PHOTO_STEPS.map((step, i) => {
@@ -69,16 +135,9 @@ export default function PhotoFlowScreen() {
 
             <TouchableOpacity
               style={[pf.captureBtn, isDone && pf.captureBtnDone]}
-              onPress={() => {
-                navigation.navigate('Capture', {
-                  patientId, visitId, operatorId,
-                  photoType: step.type,
-                });
-                // Mark done when returning (handled via focus listener in production)
-                setTimeout(() => setDone(prev => ({ ...prev, [step.type]: true })), 3000);
-              }}>
-              <Text style={pf.captureBtnText}>
-                {isDone ? '✓ Retake' : 'Capture →'}
+              onPress={() => handleCapture(step.type)}>
+              <Text style={[pf.captureBtnText, isDone && pf.captureBtnTextDone]}>
+                {isDone ? '✓ Retake Photo' : `Capture ${step.title} →`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -94,24 +153,32 @@ export default function PhotoFlowScreen() {
         </Text>
       </View>
 
-      {/* ── Complete button ────────────────────────────────────────────── */}
+      {/* ── Complete button ── disabled until all 3 done ─────────────── */}
       <TouchableOpacity
         style={[pf.doneBtn, !allDone && pf.doneBtnDisabled]}
-        onPress={() => navigation.navigate('Success', { patientId, visitId })}
-        disabled={!allDone}>
+        onPress={handleComplete}
+        activeOpacity={allDone ? 0.8 : 1}>
         <Text style={pf.doneBtnText}>
-          {allDone ? 'Complete Collection ✓' : `${Object.values(done).filter(Boolean).length}/3 Photos Captured`}
+          {allDone
+            ? '✓ Review & Submit All 3 Photos'
+            : `${completedCount}/3 Photos Captured — Complete All to Proceed`}
         </Text>
       </TouchableOpacity>
+
+      {!allDone && (
+        <Text style={pf.lockHint}>
+          🔒 All 3 photos are clinically mandatory. Submit is locked until complete.
+        </Text>
+      )}
 
     </ScrollView>
   );
 }
 
-const W = '#FFFFFF';
-const N = '#1F3864';
-const G = '#2ECC71';
-const GR= '#F5F6FA';
+const W  = '#FFFFFF';
+const N  = '#1F3864';
+const G  = '#2ECC71';
+const GR = '#F5F6FA';
 
 const pf = StyleSheet.create({
   container:        { flex: 1, backgroundColor: GR },
@@ -139,8 +206,9 @@ const pf = StyleSheet.create({
     backgroundColor: N, borderRadius: 8,
     paddingVertical: 12, alignItems: 'center',
   },
-  captureBtnDone:   { backgroundColor: '#E8F8EE', borderWidth: 1.5, borderColor: G },
-  captureBtnText:   { color: W, fontWeight: '700', fontSize: 14 },
+  captureBtnDone:     { backgroundColor: '#E8F8EE', borderWidth: 1.5, borderColor: G },
+  captureBtnText:     { color: W, fontWeight: '700', fontSize: 14 },
+  captureBtnTextDone: { color: '#1A7F3C', fontWeight: '700', fontSize: 14 },
   stickerNote: {
     backgroundColor: '#EFF6FF', borderRadius: 10,
     padding: 14, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: '#2196F3',
@@ -148,9 +216,13 @@ const pf = StyleSheet.create({
   stickerNoteTitle: { fontSize: 14, fontWeight: '700', color: '#1565C0', marginBottom: 4 },
   stickerNoteText:  { fontSize: 13, color: '#1565C0', lineHeight: 18 },
   doneBtn: {
-    backgroundColor: N, borderRadius: 12,
+    backgroundColor: G, borderRadius: 12,
     paddingVertical: 17, alignItems: 'center',
   },
   doneBtnDisabled:  { backgroundColor: '#AAB0C0' },
-  doneBtnText:      { color: W, fontWeight: '800', fontSize: 16 },
+  doneBtnText:      { color: W, fontWeight: '800', fontSize: 15, textAlign: 'center', paddingHorizontal: 8 },
+  lockHint: {
+    fontSize: 12, color: '#888', textAlign: 'center',
+    marginTop: 12, lineHeight: 18,
+  },
 });

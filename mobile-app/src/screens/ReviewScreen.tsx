@@ -50,6 +50,12 @@ export default function ReviewScreen() {
   const m = measurements || captureResponse?.measurements || {};
   const measId = m?.measurement_id || captureResponse?.measurement_id;
 
+  // ── Doctor Manual Diagnosis State (Matched with AI Models) ───────────────
+  const aiWagnerGrade = m?.wagner_grade ?? 1;
+  const [doctorDiagnosis, setDoctorDiagnosis] = useState('');
+  const [doctorWagnerGrade, setDoctorWagnerGrade] = useState<number>(aiWagnerGrade);
+  const isConcordant = doctorWagnerGrade === aiWagnerGrade;
+
   // ── Submit Doctor Correction ─────────────────────────────────────────────
   const submitCorrection = useCallback(async () => {
     if (!measId) {
@@ -133,6 +139,8 @@ export default function ReviewScreen() {
           annotated: anno,
         },
         metadata: safeMetadata,
+        doctor_diagnosis: doctorDiagnosis.trim() || undefined,
+        doctor_wagner_grade: doctorWagnerGrade,
         errors: [],
         warnings: captureResponse?.warnings || [],
       };
@@ -155,6 +163,8 @@ export default function ReviewScreen() {
     m,
     measId,
     metadata,
+    doctorDiagnosis,
+    doctorWagnerGrade,
     navigation,
   ]);
 
@@ -366,6 +376,82 @@ export default function ReviewScreen() {
           </View>
         )}
 
+        {/* ── Doctor Clinical Manual Diagnosis & AI Model Matching ────────── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>👨‍⚕️ Doctor Clinical Diagnosis & AI Verification</Text>
+          <Text style={styles.correctionHint}>
+            Clinician records manual diagnosis and severity rating during submission. The clinical impression is cross-matched against AI Model predictions.
+          </Text>
+
+          <Text style={styles.fieldLabel}>Doctor Wagner Severity Assessment *</Text>
+          <View style={styles.gradeButtonRow}>
+            {[0, 1, 2, 3, 4, 5].map((g) => {
+              const isSelected = doctorWagnerGrade === g;
+              const gradeColor = g >= 3 ? RED : (g >= 2 ? ORANGE : GREEN);
+              return (
+                <TouchableOpacity
+                  key={g}
+                  style={[
+                    styles.gradeBtn,
+                    isSelected && { backgroundColor: gradeColor, borderColor: gradeColor },
+                  ]}
+                  onPress={() => setDoctorWagnerGrade(g)}>
+                  <Text style={[styles.gradeBtnText, isSelected && styles.gradeBtnTextActive]}>
+                    Grade {g}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={styles.fieldLabel}>Doctor Manual Clinical Impression & Notes *</Text>
+          <TextInput
+            style={[styles.input, styles.notesInput]}
+            value={doctorDiagnosis}
+            onChangeText={setDoctorDiagnosis}
+            placeholder="Enter clinical impression (e.g. Superficial neuropathic ulcer, clean margins, good granulating base...)"
+            placeholderTextColor="#94A3B8"
+            multiline
+            numberOfLines={3}
+          />
+
+          {/* Quick presets */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
+            {[
+              'Superficial neuropathic ulcer',
+              'Deep ulcer with tendon exposure',
+              'Active granulation, offloading required',
+              'Mild erythema, no systemic signs',
+              'Slough present, debridement advised',
+            ].map((preset, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.presetChip}
+                onPress={() => setDoctorDiagnosis(prev => prev ? `${prev} · ${preset}` : preset)}>
+                <Text style={styles.presetChipText}>+ {preset}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* AI vs Doctor Matching Result Badge */}
+          <View style={[
+            styles.matchBadge,
+            { backgroundColor: isConcordant ? '#E8F8EE' : '#FFF3CD', borderColor: isConcordant ? GREEN : ORANGE }
+          ]}>
+            <View style={styles.matchBadgeHeader}>
+              <Text style={[styles.matchBadgeTitle, { color: isConcordant ? '#1A7F3C' : '#856404' }]}>
+                {isConcordant
+                  ? '✓ CONCORDANT DIAGNOSIS (AI & Doctor in Agreement)'
+                  : '⚠️ DIVERGENT DIAGNOSIS (Doctor Authoritative Override)'}
+              </Text>
+            </View>
+            <Text style={[styles.matchBadgeText, { color: isConcordant ? '#1E3A8A' : '#713F12' }]}>
+              • AI Model Prediction: Wagner Grade {aiWagnerGrade} ({m?.grade_label || 'Superficial Ulcer'}{m?.confidence ? ` · ${Math.round(m.confidence * 100)}% conf` : ''}){'\n'}
+              • Doctor Manual Assessment: Wagner Grade {doctorWagnerGrade} {doctorDiagnosis ? `— "${doctorDiagnosis.slice(0, 45)}${doctorDiagnosis.length > 45 ? '...' : ''}"` : '(Impression text pending)'}
+            </Text>
+          </View>
+        </View>
+
         {/* ── Bottom Action Buttons ───────────────────────────────────────── */}
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -522,4 +608,28 @@ const styles = StyleSheet.create({
   buttonText:          { color: WHITE, fontWeight: '700', fontSize: 14 },
   secondaryButtonText: { color: NAVY, fontWeight: '700', fontSize: 14 },
   disabled:            { opacity: 0.5 },
+
+  gradeButtonRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
+  gradeBtn: {
+    flex: 1, paddingVertical: 8, alignItems: 'center',
+    borderRadius: 8, borderWidth: 1, borderColor: '#D0D5DD',
+    backgroundColor: '#F9FAFB',
+  },
+  gradeBtnText: { fontSize: 11, fontWeight: '700', color: '#475569' },
+  gradeBtnTextActive: { color: WHITE },
+
+  presetRow: { marginTop: 6, marginBottom: 12 },
+  presetChip: {
+    backgroundColor: '#F1F5F9', borderRadius: 14,
+    paddingHorizontal: 10, paddingVertical: 5,
+    marginRight: 8, borderWidth: 1, borderColor: '#CBD5E1',
+  },
+  presetChipText: { fontSize: 11, color: '#334155', fontWeight: '600' },
+
+  matchBadge: {
+    borderWidth: 1.5, borderRadius: 10, padding: 12, marginTop: 4,
+  },
+  matchBadgeHeader: { marginBottom: 4 },
+  matchBadgeTitle: { fontSize: 12, fontWeight: '800' },
+  matchBadgeText: { fontSize: 11, lineHeight: 16, marginTop: 2 },
 });

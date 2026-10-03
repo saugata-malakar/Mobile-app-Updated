@@ -137,6 +137,8 @@ export interface SubmitCapturePayload {
     annotated?: string;   // Base64
   };
   metadata: CaptureMetadata;
+  doctor_diagnosis?: string;
+  doctor_wagner_grade?: number;
   processing_time_ms?: number;
   errors: string[];
   warnings: string[];

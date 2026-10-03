@@ -22,6 +22,7 @@ sys.path.append(str(_diabetes_ai_root))
 
 import uuid
 import base64
+import json
 from datetime import datetime, timedelta
 from typing import List, Optional, Any, Dict
 import cv2
@@ -464,6 +465,9 @@ class MeasurementsPayload(BaseModel):
     confidence: Optional[float] = 0.88
     segmentation: str = "unet_resnet34"
     mask_rle: Optional[Dict[str, Any]] = None
+    wagner_grade: Optional[int] = 1
+    grade_label: Optional[str] = "Superficial Ulcer"
+    recommendation: Optional[str] = None
 
 class SubmitCapturePayload(BaseModel):
     capture_id: str
@@ -476,6 +480,8 @@ class SubmitCapturePayload(BaseModel):
     measurements: MeasurementsPayload = Field(default_factory=MeasurementsPayload)
     images: Dict[str, Optional[str]] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    doctor_diagnosis: Optional[str] = None
+    doctor_wagner_grade: Optional[int] = None
     processing_time_ms: Optional[int] = 350
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
@@ -1392,10 +1398,97 @@ def submit_capture(payload: SubmitCapturePayload):
             "patient_id": payload.patient_id,
             "visit_id": payload.visit_id,
             **payload.measurements.dict(),
+            "doctor_diagnosis": payload.doctor_diagnosis,
+            "doctor_wagner_grade": payload.doctor_wagner_grade,
             "created_at": datetime.utcnow().isoformat(),
         }
 
     storage_info = save_capture_to_sqlite_and_disk(payload, photo_id, measurement_id)
+
+    wagner_grade = (
+        payload.doctor_wagner_grade
+        if payload.doctor_wagner_grade is not None
+        else (payload.measurements.wagner_grade if payload.measurements else 1)
+    )
+    area_cm2 = payload.measurements.area_cm2 if (payload.measurements and payload.measurements.done) else None
+
+    # Immediate reflection in Doctor Account / Command Hub patient registry
+    if payload.patient_id in _PATIENTS_DB:
+        p = _PATIENTS_DB[payload.patient_id]
+        if area_cm2 is not None:
+            p["latest_wound_area_cm2"] = area_cm2
+        p["wagner_grade"] = wagner_grade
+        p["last_visit"] = datetime.utcnow().strftime("%Y-%m-%d")
+        p["status"] = "Under Active Review" if wagner_grade >= 2 else "Healing Well"
+        p["urgency"] = "HIGH" if wagner_grade >= 2 else ("MEDIUM" if wagner_grade == 1 else "LOW")
+        if payload.doctor_diagnosis:
+            p["doctor_diagnosis"] = payload.doctor_diagnosis
+        if storage_info.get("photo_file"):
+            p["photo_file"] = storage_info["photo_file"]
+    else:
+        _PATIENTS_DB[payload.patient_id] = {
+            "patient_id": payload.patient_id,
+            "id": payload.patient_id,
+            "full_name": f"Patient {payload.patient_id}",
+            "name": f"Patient {payload.patient_id}",
+            "age": 55,
+            "gender": "Male",
+            "phone": "+91 98000 00000",
+            "village": "Rural Sub-Centre",
+            "district": "Paschim Medinipur",
+            "wagner_grade": wagner_grade,
+            "urgency": "HIGH" if wagner_grade >= 2 else "MEDIUM",
+            "latest_wound_area_cm2": area_cm2 or 2.50,
+            "registered_by": payload.metadata.get("operator_id") or "ASHA_OPERATOR",
+            "registered_at": datetime.utcnow().isoformat(),
+            "last_visit": datetime.utcnow().strftime("%Y-%m-%d"),
+            "doctor_diagnosis": payload.doctor_diagnosis,
+            "photo_file": storage_info.get("photo_file"),
+            "status": "Under Active Review" if wagner_grade >= 2 else "Healing Well",
+            "wound_site": "Plantar Foot",
+        }
+
+    # Generate immediate doctor triage alert
+    pat_name = _PATIENTS_DB[payload.patient_id].get("name") or payload.patient_id
+    alert_id = f"ALT_{uuid.uuid4().hex[:6].upper()}"
+    _ALERTS_DB.insert(0, {
+        "id": alert_id,
+        "alert_id": alert_id,
+        "patient_id": payload.patient_id,
+        "patient_name": pat_name,
+        "severity": "HIGH" if wagner_grade >= 2 else "MEDIUM",
+        "alert_level": "red" if wagner_grade >= 2 else "yellow",
+        "message": f"Submitted: Wagner Grade {wagner_grade} · {area_cm2 or 'calibrated'} cm² · {payload.doctor_diagnosis or 'Clinical Assessment'}",
+        "wound_site_label": _PATIENTS_DB[payload.patient_id].get("wound_site", "Plantar Foot"),
+        "timestamp": datetime.utcnow().isoformat(),
+        "resolved": False,
+        "escalated_to": "DOC_IITKGP_01",
+    })
+
+    # Save doctor clinical diagnosis note to SQLite
+    if payload.doctor_diagnosis:
+        for db_file in _get_target_databases():
+            try:
+                conn = sqlite3.connect(db_file)
+                c = conn.cursor()
+                note_id = f"NOTE_{uuid.uuid4().hex[:8].upper()}"
+                c.execute(
+                    "INSERT OR REPLACE INTO consultation_notes (note_id, patient_id, free_text, extracted_entities, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        note_id,
+                        payload.patient_id,
+                        payload.doctor_diagnosis,
+                        json.dumps({"wagner_grade": wagner_grade, "visit_id": payload.visit_id}),
+                        datetime.utcnow().isoformat(),
+                    ),
+                )
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"[SQLITE NOTE ERROR] {e}")
+
+    ai_wagner = payload.measurements.wagner_grade if payload.measurements else 1
+    is_concordant = (payload.doctor_wagner_grade is None) or (payload.doctor_wagner_grade == ai_wagner)
 
     return {
         "capture_id": payload.capture_id,
@@ -1408,6 +1501,13 @@ def submit_capture(payload: SubmitCapturePayload):
         "warnings": payload.warnings,
         "photo_file": storage_info.get("photo_file"),
         "saved_files": storage_info.get("saved_files", []),
+        "doctor_diagnosis_recorded": bool(payload.doctor_diagnosis),
+        "diagnosis_concordance": {
+            "ai_wagner_grade": ai_wagner,
+            "doctor_wagner_grade": payload.doctor_wagner_grade,
+            "is_concordant": is_concordant,
+            "doctor_diagnosis": payload.doctor_diagnosis,
+        },
         "message": f"Capture submitted and stored securely in local database & disk: {storage_info.get('photo_file') or 'saved'}",
     }
 

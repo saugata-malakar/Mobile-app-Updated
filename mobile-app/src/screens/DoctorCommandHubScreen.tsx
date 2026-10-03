@@ -1,7 +1,7 @@
 // mobile-app/src/screens/DoctorCommandHubScreen.tsx
 // Complete simulation of doctor-dashboard-mu.vercel.app with all 5 options inspected from live DOM
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,9 @@ import {
   Alert,
   Modal,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { UserPersona } from './PortalLoginScreen';
 
 const NAVY_BG   = '#0B132B';
@@ -172,9 +173,72 @@ export default function DoctorCommandHubScreen() {
   const [autoEscalateEnabled, setAutoEscalateEnabled] = useState(true);
   const [selectedLang, setSelectedLang] = useState('English');
 
+  // ── Live Cohort & Alerts State (Reflects Submitted Captures) ──
+  const [cohortPatients, setCohortPatients] = useState<PatientRecord[]>(COHORT_PATIENTS);
+  const [liveAlerts, setLiveAlerts] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadLiveCohort = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('http://192.168.31.94:8000/api/v1/patients');
+      if (res.ok) {
+        const json = await res.json();
+        const serverPatients: any[] = json?.data?.patients || json?.data?.items || [];
+        if (serverPatients.length > 0) {
+          const mapped: PatientRecord[] = serverPatients.map((sp: any) => ({
+            patient_id: sp.patient_id || sp.id,
+            name: sp.full_name || sp.name || sp.patient_id,
+            age: sp.age || 55,
+            gender: sp.gender ? (sp.gender.charAt(0).toUpperCase() + sp.gender.slice(1)) : 'Male',
+            phone: sp.phone || '+91 98000 00000',
+            village: sp.village || sp.district || 'Rural Sub-Centre',
+            district: sp.district || 'Paschim Medinipur',
+            wagner_grade: sp.wagner_grade ?? 1,
+            urgency: (sp.urgency || (sp.wagner_grade >= 2 ? 'HIGH' : (sp.wagner_grade === 1 ? 'MEDIUM' : 'LOW'))) as any,
+            latest_wound_area_cm2: typeof sp.latest_wound_area_cm2 === 'number' ? sp.latest_wound_area_cm2 : (sp.wagner_grade >= 2 ? 3.12 : 1.45),
+            registered_by: sp.registered_by || 'ASHA_WB_0042',
+            registered_at: sp.created_at || sp.registered_at || new Date().toISOString(),
+          }));
+
+          const combined = [...mapped];
+          COHORT_PATIENTS.forEach(cp => {
+            if (!combined.some(p => p.patient_id === cp.patient_id)) {
+              combined.push(cp);
+            }
+          });
+          setCohortPatients(combined);
+        }
+      }
+    } catch (_e) {
+      // offline fallback: preserve existing cohort
+    }
+
+    try {
+      const aRes = await fetch('http://192.168.31.94:8000/api/v1/alerts');
+      if (aRes.ok) {
+        const aJson = await aRes.json();
+        const alerts = aJson?.data?.items || aJson?.data?.alerts || [];
+        if (alerts.length > 0) {
+          setLiveAlerts(alerts);
+        }
+      }
+    } catch (_e) {
+      // offline fallback
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadLiveCohort();
+    }, [loadLiveCohort])
+  );
+
   // ── Filtered Patients ──
   const filteredPatients = useMemo(() => {
-    return COHORT_PATIENTS.filter(p => {
+    return cohortPatients.filter(p => {
       const matchesSearch =
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -185,7 +249,9 @@ export default function DoctorCommandHubScreen() {
         selectedWagner === 'ALL' || String(p.wagner_grade) === selectedWagner;
       return matchesSearch && matchesUrgency && matchesWagner;
     });
-  }, [searchQuery, selectedUrgency, selectedWagner]);
+  }, [cohortPatients, searchQuery, selectedUrgency, selectedWagner]);
+
+  const activePatient = cohortPatients.find(p => p.patient_id === 'PAT_KGP_01') || cohortPatients[0] || COHORT_PATIENTS[0];
 
   const launchCamera = (targetPatientId?: string) => {
     navigation.navigate('PhotoFlow', {
@@ -319,11 +385,22 @@ export default function DoctorCommandHubScreen() {
             <View style={styles.card}>
               <Text style={styles.statLabel}>OVERALL HEALING PROGRESS</Text>
               <View style={styles.progressRow}>
-                <Text style={[styles.statVal, { color: EMERALD, fontSize: 32 }]}>68%</Text>
-                <Text style={styles.progressSubText}>Area reduced from 5.20 cm² to 2.57 cm²</Text>
+                <Text style={[styles.statVal, { color: EMERALD, fontSize: 32 }]}>
+                  {Math.min(100, Math.max(0, Math.round(((5.20 - (activePatient.latest_wound_area_cm2 || 2.57)) / 5.20) * 100)))}%
+                </Text>
+                <Text style={styles.progressSubText}>
+                  Area reduced from 5.20 cm² to {(activePatient.latest_wound_area_cm2 || 2.57).toFixed(2)} cm²
+                </Text>
               </View>
               <View style={styles.progressBarTrack}>
-                <View style={[styles.progressBarFill, { width: '68%' }]} />
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.min(100, Math.max(0, Math.round(((5.20 - (activePatient.latest_wound_area_cm2 || 2.57)) / 5.20) * 100)))}%`,
+                    },
+                  ]}
+                />
               </View>
             </View>
 
@@ -548,7 +625,7 @@ export default function DoctorCommandHubScreen() {
             {/* Telemetry Status Card */}
             <View style={styles.card}>
               <Text style={styles.cardHeaderTitle}>📡 Live Mobile API Network Telemetry</Text>
-              <Text style={styles.guideItem}>• Server Endpoint: http://192.168.1.7:8000 (Active)</Text>
+              <Text style={styles.guideItem}>• Server Endpoint: http://192.168.31.94:8000 (Active)</Text>
               <Text style={styles.guideItem}>• OpenCV Calibrant Detector: Hough Circles (15.0 mm reference)</Text>
               <Text style={styles.guideItem}>• ML Model: PyTorch EfficientNet-B0 (wound_severity_best.pth)</Text>
               <Text style={styles.guideItem}>• Storage Directory: stored_photos/ & diabetescare.db</Text>
@@ -582,7 +659,7 @@ export default function DoctorCommandHubScreen() {
               <View style={styles.chartHeaderRow}>
                 <Text style={styles.cardHeaderTitle}>Computer Vision Wound Segmentation</Text>
                 <View style={styles.deltaBadge}>
-                  <Text style={styles.deltaBadgeText}>Wagner Grade 2</Text>
+                  <Text style={styles.deltaBadgeText}>Wagner Grade {activePatient.wagner_grade}</Text>
                 </View>
               </View>
 
@@ -611,7 +688,7 @@ export default function DoctorCommandHubScreen() {
                 </Text>
                 <Text style={styles.patDetails}>
                   {showSegmentationOverlay
-                    ? 'Identified Ulcer Bed: 2.57 cm² · Major Axis: 24.1 mm · Minor Axis: 13.8 mm'
+                    ? `Identified Ulcer Bed: ${(activePatient.latest_wound_area_cm2 || 2.57).toFixed(2)} cm² · Calibrated px/mm`
                     : '15mm Circular Calibrant Scale Marker Detected'}
                 </Text>
               </View>
@@ -632,9 +709,13 @@ export default function DoctorCommandHubScreen() {
                   <Text style={styles.historySub}>-25.0% Area Reduction</Text>
                 </View>
                 <View style={styles.historyRow}>
-                  <Text style={styles.historyDate}>02 Sep (Latest):</Text>
-                  <Text style={[styles.historyVal, { color: EMERALD }]}>2.57 cm²</Text>
-                  <Text style={styles.historySub}>-50.6% Net Healing Progress</Text>
+                  <Text style={styles.historyDate}>Latest Assessment:</Text>
+                  <Text style={[styles.historyVal, { color: EMERALD }]}>
+                    {(activePatient.latest_wound_area_cm2 || 2.57).toFixed(2)} cm²
+                  </Text>
+                  <Text style={styles.historySub}>
+                    {activePatient.wagner_grade >= 2 ? 'Active Physician Monitoring' : 'Steady Healing Progress'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -813,7 +894,7 @@ export default function DoctorCommandHubScreen() {
                   <Text style={styles.statLabel}>ACTIVE COHORT</Text>
                   <Text style={styles.statEmoji}>👥</Text>
                 </View>
-                <Text style={styles.statVal}>4 Enrolled</Text>
+                <Text style={styles.statVal}>{cohortPatients.length} Enrolled</Text>
                 <Text style={styles.statSub}>Assigned to Lead Diabetologist</Text>
               </View>
 
@@ -822,7 +903,7 @@ export default function DoctorCommandHubScreen() {
                   <Text style={styles.statLabel}>URGENT TRIAGE ALERTS</Text>
                   <Text style={styles.statEmoji}>🚨</Text>
                 </View>
-                <Text style={[styles.statVal, { color: RED }]}>2 Unresolved</Text>
+                <Text style={[styles.statVal, { color: RED }]}>{liveAlerts.length > 0 ? liveAlerts.length : 2} Unresolved</Text>
                 <Text style={styles.statSub}>Requires immediate physician review</Text>
               </View>
 
@@ -879,53 +960,79 @@ export default function DoctorCommandHubScreen() {
                 <View style={styles.chartHeaderRow}>
                   <Text style={styles.cardHeaderTitle}>🚨 Urgent Alert Triage</Text>
                   <View style={styles.pendingBadge}>
-                    <Text style={styles.pendingBadgeText}>2 Pending</Text>
+                    <Text style={styles.pendingBadgeText}>{liveAlerts.length > 0 ? `${liveAlerts.length} Pending` : '2 Pending'}</Text>
                   </View>
                 </View>
 
-                <View style={styles.alertItem}>
-                  <View style={styles.alertItemHeader}>
-                    <Text style={styles.alertPatientName}>Ramesh Chandra Sen</Text>
-                    <View style={styles.redBadge}>
-                      <Text style={styles.redBadgeText}>RED</Text>
+                {liveAlerts.length > 0 ? (
+                  liveAlerts.slice(0, 3).map((a, idx) => (
+                    <View key={a.id || idx} style={styles.alertItem}>
+                      <View style={styles.alertItemHeader}>
+                        <Text style={styles.alertPatientName}>{a.patient_name || a.patient_id}</Text>
+                        <View style={[styles.redBadge, a.severity !== 'HIGH' && { backgroundColor: AMBER }]}>
+                          <Text style={styles.redBadgeText}>{a.severity || 'RED'}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.alertDesc}>{a.message}</Text>
+                      <View style={styles.alertFooter}>
+                        <Text style={styles.alertTime}>{a.timestamp ? a.timestamp.slice(11, 16) : 'Just now'}</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const target = cohortPatients.find(p => p.patient_id === a.patient_id) || cohortPatients[0];
+                            openOverride(target);
+                          }}>
+                          <Text style={styles.alertLink}>Review Record →</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                  <Text style={styles.alertDesc}>
-                    Ulcer surface area enlargement detected (+14.2% increase compared to baseline). Immediate offloading advisory required.
-                  </Text>
-                  <View style={styles.alertFooter}>
-                    <Text style={styles.alertTime}>2 hrs ago</Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const pat = COHORT_PATIENTS[0];
-                        openOverride(pat);
-                      }}>
-                      <Text style={styles.alertLink}>Review Record →</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                  ))
+                ) : (
+                  <>
+                    <View style={styles.alertItem}>
+                      <View style={styles.alertItemHeader}>
+                        <Text style={styles.alertPatientName}>Ramesh Chandra Sen</Text>
+                        <View style={styles.redBadge}>
+                          <Text style={styles.redBadgeText}>RED</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.alertDesc}>
+                        Ulcer surface area enlargement detected (+14.2% increase compared to baseline). Immediate offloading advisory required.
+                      </Text>
+                      <View style={styles.alertFooter}>
+                        <Text style={styles.alertTime}>2 hrs ago</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const pat = cohortPatients[0];
+                            openOverride(pat);
+                          }}>
+                          <Text style={styles.alertLink}>Review Record →</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
 
-                <View style={styles.alertItem}>
-                  <View style={styles.alertItemHeader}>
-                    <Text style={styles.alertPatientName}>Lakshmi Narayan Paul</Text>
-                    <View style={styles.redBadge}>
-                      <Text style={styles.redBadgeText}>RED</Text>
+                    <View style={styles.alertItem}>
+                      <View style={styles.alertItemHeader}>
+                        <Text style={styles.alertPatientName}>Lakshmi Narayan Paul</Text>
+                        <View style={styles.redBadge}>
+                          <Text style={styles.redBadgeText}>RED</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.alertDesc}>
+                        Wagner Grade 3 deep tissue probe positive with secondary purulent drainage. Vascular referral recommended.
+                      </Text>
+                      <View style={styles.alertFooter}>
+                        <Text style={styles.alertTime}>2 hrs ago</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const pat = cohortPatients[3] || cohortPatients[0];
+                            openOverride(pat);
+                          }}>
+                          <Text style={styles.alertLink}>Review Record →</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                  <Text style={styles.alertDesc}>
-                    Wagner Grade 3 deep tissue probe positive with secondary purulent drainage. Vascular referral recommended.
-                  </Text>
-                  <View style={styles.alertFooter}>
-                    <Text style={styles.alertTime}>2 hrs ago</Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const pat = COHORT_PATIENTS[3];
-                        openOverride(pat);
-                      }}>
-                      <Text style={styles.alertLink}>Review Record →</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                  </>
+                )}
               </View>
             </View>
 

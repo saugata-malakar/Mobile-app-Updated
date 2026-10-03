@@ -51,7 +51,7 @@ const PHOTO_CONFIG: Record<string, { title: string; hint: string; icon: string }
 export default function CaptureScreen() {
   const navigation  = useNavigation<any>();
   const route       = useRoute<CaptureRouteProp>();
-  const { patientId, visitId, photoType, operatorId } = route.params;
+  const { patientId, visitId, photoType, operatorId, returnToPhotoFlow } = route.params;
 
   const [previewUri, setPreviewUri]     = useState<string | null>(null);
   const [previewB64, setPreviewB64]     = useState<string | null>(null);
@@ -114,23 +114,44 @@ export default function CaptureScreen() {
         annotated_image_b64: undefined,
       };
 
-      // Navigate to Review Screen with lightweight primitive params
-      navigation.navigate('Review', {
-        patientId,
-        visitId,
-        photoType,
-        operatorId,
-        captureResponse: cleanResponse,
-        metadata,
-        measurements: response.measurements || {
-          length_mm: undefined,
-          width_mm: undefined,
-          area_cm2: undefined,
-          perimeter_mm: undefined,
-          confidence: undefined,
-          measurement_id: response.measurement_id,
-        },
-      });
+      // Return to PhotoFlow if in 3-photo checklist flow; otherwise navigate directly to Review
+      if (returnToPhotoFlow) {
+        navigation.navigate('PhotoFlow', {
+          patientId,
+          visitId,
+          operatorId,
+          completedPhotoType: photoType,
+          captureResult: {
+            captureResponse: cleanResponse,
+            metadata,
+            measurements: response.measurements || {
+              length_mm: undefined,
+              width_mm: undefined,
+              area_cm2: undefined,
+              perimeter_mm: undefined,
+              confidence: undefined,
+              measurement_id: response.measurement_id,
+            },
+          },
+        });
+      } else {
+        navigation.navigate('Review', {
+          patientId,
+          visitId,
+          photoType,
+          operatorId,
+          captureResponse: cleanResponse,
+          metadata,
+          measurements: response.measurements || {
+            length_mm: undefined,
+            width_mm: undefined,
+            area_cm2: undefined,
+            perimeter_mm: undefined,
+            confidence: undefined,
+            measurement_id: response.measurement_id,
+          },
+        });
+      }
 
     } catch (err: any) {
       setProcessing(false);

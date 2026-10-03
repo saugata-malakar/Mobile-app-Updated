@@ -25,12 +25,15 @@ export type RootStackParamList = {
     patientId: string;
     visitId: string;
     operatorId: string;
+    completedPhotoType?: 'overview' | 'close_up' | 'measurement';
+    captureResult?: any;
   };
   Capture: {
     patientId: string;
     visitId: string;
     photoType: 'overview' | 'close_up' | 'measurement';
     operatorId: string;
+    returnToPhotoFlow?: boolean;
   };
   Review: {
     patientId: string;
