@@ -120,29 +120,23 @@ export default function DoctorCommandHubScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  const currentRole: 'doctor' | 'patient' | 'asha' | 'hospital_admin' =
+  const currentRole: 'admin' | 'doctor' | 'data_collector' | 'patient' =
     route.params?.userRole || 'patient';
   const profile: UserPersona = route.params?.userProfile || {
     role: 'patient',
     name: 'Ramesh Chandra Sen',
     title: 'Enrolled Cohort Patient',
-    badge: 'Patient Portal',
+    badge: 'Patient Record',
     badgeColor: EMERALD,
-    description: 'My Healing Journey, personal ulcer trajectory, medication guide & Govt eSanjeevani teleconsult.',
+    description: 'Longitudinal wound journey, ulcer trajectory history, medication records & eSanjeevani teleconsultation.',
     icon: '🩹',
-    mrnOrId: 'MRN: PAT_KGP_01',
+    mrnOrId: 'PAT_KGP_01',
     facility: 'Kharagpur Rural · Paschim Medinipur',
   };
 
-  // ── 5 Primary Options Navigation State ──
-  // 1: 'healing_journey' (My Healing Journey)
-  // 2: 'teleconsult' (Join Govt Teleconsult)
-  // 3: 'camera_flow' (Mobile Camera Capture Flow)
-  // 4: 'trajectory' (Full Wound Trajectory)
-  // 5: 'care_preferences' (My Care Preferences)
-  // Plus 'triage' (Clinical Triage Command)
+  // ── Primary Options Navigation State ──
   const [activeTab, setActiveTab] = useState<string>(
-    currentRole === 'doctor' ? 'triage' : 'healing_journey'
+    (currentRole === 'doctor' || currentRole === 'admin') ? 'triage' : 'healing_journey'
   );
 
   // ── Search & Filter State ──

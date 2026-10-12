@@ -137,6 +137,10 @@ export interface SubmitCapturePayload {
     annotated?: string;   // Base64
   };
   metadata: CaptureMetadata;
+  doctor_initial_assessment?: any;
+  ai_prediction?: any;
+  post_ai_assessment?: any;
+  final_validated_label?: any;
   doctor_diagnosis?: string;
   doctor_wagner_grade?: number;
   processing_time_ms?: number;
@@ -204,20 +208,23 @@ export interface ProgressionResponse {
 
 // ── HTTP helpers ───────────────────────────────────────────────────────────
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1500): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 2500): Promise<Response> {
+  let timer: any = null;
   try {
+    const controller = new AbortController();
+    timer = setTimeout(() => {
+      try { controller.abort(); } catch (_) {}
+    }, timeoutMs);
     const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     return res;
   } catch (err) {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     throw err;
   }
 }
 
-async function post<T>(path: string, body: object, timeoutMs = 1500): Promise<T> {
+async function post<T>(path: string, body: object, timeoutMs = 2500): Promise<T> {
   const res = await fetchWithTimeout(`${API}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -230,7 +237,7 @@ async function post<T>(path: string, body: object, timeoutMs = 1500): Promise<T>
   return res.json();
 }
 
-async function patch<T>(path: string, body: object, timeoutMs = 1500): Promise<T> {
+async function patch<T>(path: string, body: object, timeoutMs = 2500): Promise<T> {
   const res = await fetchWithTimeout(`${API}${path}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -243,7 +250,7 @@ async function patch<T>(path: string, body: object, timeoutMs = 1500): Promise<T
   return res.json();
 }
 
-async function get<T>(path: string, timeoutMs = 1500): Promise<T> {
+async function get<T>(path: string, timeoutMs = 2500): Promise<T> {
   const res = await fetchWithTimeout(`${API}${path}`, {}, timeoutMs);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -252,7 +259,7 @@ async function get<T>(path: string, timeoutMs = 1500): Promise<T> {
   return res.json();
 }
 
-async function postForm<T>(path: string, form: FormData, timeoutMs = 2500): Promise<T> {
+async function postForm<T>(path: string, form: FormData, timeoutMs = 3500): Promise<T> {
   const res = await fetchWithTimeout(`${API}${path}`, {
     method: 'POST',
     body: form,

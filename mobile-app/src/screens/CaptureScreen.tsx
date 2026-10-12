@@ -57,7 +57,7 @@ export default function CaptureScreen() {
   const [previewB64, setPreviewB64]     = useState<string | null>(null);
   const [guidance, setGuidance]         = useState<GuidanceResponse | null>(null);
   const [processing, setProcessing]     = useState(false);
-  const [location, setLocation]         = useState<{ lat: number; lon: number } | null>({ lat: 22.3149, lon: 87.3105 });
+  const [location, setLocation]         = useState<{ lat: number; lon: number } | null>(null);
   const [deviceModel, setDeviceModel]   = useState('Smartphone');
 
   const config = PHOTO_CONFIG[photoType] || PHOTO_CONFIG.overview;
@@ -84,8 +84,8 @@ export default function CaptureScreen() {
         patient_id: patientId,
         visit_id: visitId,
         photo_type: photoType,
-        gps_lat: location?.lat || 22.3149,
-        gps_lon: location?.lon || 87.3105,
+        gps_lat: location?.lat || undefined,
+        gps_lon: location?.lon || undefined,
         operator_id: operatorId,
         device_model: deviceModel,
         device_os: Platform.OS,

@@ -24,7 +24,7 @@ const INDIGO    = '#6366F1';
 const TEXT_MUTED = '#94A3B8';
 
 export interface UserPersona {
-  role: 'doctor' | 'patient' | 'asha' | 'hospital_admin';
+  role: 'admin' | 'doctor' | 'data_collector' | 'patient';
   name: string;
   title: string;
   badge: string;
@@ -37,54 +37,54 @@ export interface UserPersona {
 
 const PERSONAS: UserPersona[] = [
   {
+    role: 'admin',
+    name: 'System Administrator',
+    title: 'Full System Access & Governance',
+    badge: 'Admin Access',
+    badgeColor: INDIGO,
+    description: 'Full access: System management, DPDP compliance audits, research dataset export, and user management.',
+    icon: '👑',
+    mrnOrId: 'ADMIN_MMCH_01',
+    facility: 'Midnapore Apex Hub · MMCH',
+  },
+  {
     role: 'doctor',
     name: 'Dr. Clinical Specialist',
     title: 'Lead Diabetologist & Podiatric Surgeon',
-    badge: 'Physician Command',
+    badge: 'Doctor Triage & Validation',
     badgeColor: BLUE_BTN,
-    description: 'Clinical decision triage, urgent ulcer alerts, multi-visit wound trajectories & doctor overrides.',
+    description: 'Full clinical workflow: Register patients, collect 3-photo data, prescribe, independent assessment, review AI & final validation.',
     icon: '👨‍⚕️',
     mrnOrId: 'DOC_IITKGP_01',
     facility: 'Midnapore Apex Hub · Node #01',
   },
   {
-    role: 'patient',
-    name: 'Ramesh Chandra Sen',
-    title: 'Enrolled Cohort Patient',
-    badge: 'Patient Portal',
-    badgeColor: EMERALD,
-    description: 'My Healing Journey, personal ulcer trajectory, medication guide & Govt eSanjeevani teleconsult.',
-    icon: '🩹',
-    mrnOrId: 'MRN: PAT_KGP_01',
-    facility: 'Kharagpur Rural · Paschim Medinipur',
-  },
-  {
-    role: 'asha',
-    name: 'Sunita Murmu',
-    title: 'ASHA Field Health Worker',
-    badge: 'Field Workforce',
+    role: 'data_collector',
+    name: 'Sunita Murmu (Data Collector)',
+    title: 'Authorized Data Collector & Field Worker',
+    badge: 'Data Collection Only',
     badgeColor: AMBER,
-    description: 'Patient field intake, circular calibrant AI photography, offline queue & cloud synchronization.',
-    icon: '👩‍⚕️',
-    mrnOrId: 'ASHA_WB_0042',
+    description: 'Authorized field intake: Register patients, collect 3-photo wound images. (No prescribing or AI validation access).',
+    icon: '📋',
+    mrnOrId: 'DC_WB_0042',
     facility: 'Kharagpur Rural Sub-Centre',
   },
   {
-    role: 'hospital_admin',
-    name: 'Midnapore Apex Hub Admin',
-    title: 'Hospital Operations & Governance',
-    badge: 'Statutory Oversight',
-    badgeColor: INDIGO,
-    description: 'Hospital throughput, DPDP statutory consent audit, right-to-erasure logs & ML model informatics.',
-    icon: '🏥',
-    mrnOrId: 'ADMIN_MMCH_01',
-    facility: 'Midnapore Medical College & Hospital',
+    role: 'patient',
+    name: 'Ramesh Chandra Sen',
+    title: 'Enrolled Cohort Patient',
+    badge: 'Patient Record',
+    badgeColor: EMERALD,
+    description: 'Longitudinal wound journey, ulcer trajectory history, medication records & eSanjeevani teleconsultation.',
+    icon: '🩹',
+    mrnOrId: 'PAT_KGP_01',
+    facility: 'Kharagpur Rural · Paschim Medinipur',
   },
 ];
 
 export default function PortalLoginScreen() {
   const navigation = useNavigation<any>();
-  const [selectedRole, setSelectedRole] = useState<'doctor' | 'patient' | 'asha' | 'hospital_admin'>('doctor');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'doctor' | 'data_collector' | 'patient'>('doctor');
 
   const handleLogin = (persona: UserPersona) => {
     navigation.navigate('DoctorCommandHub', {

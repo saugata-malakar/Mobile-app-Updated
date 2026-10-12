@@ -94,12 +94,16 @@ export default function ReviewScreen() {
   // ── Accept & Submit to Local PC Database / Storage ───────────────────────
   const [savingCapture, setSavingCapture] = useState(false);
 
-  const handleAcceptAndContinue = useCallback(async () => {
-    setSavingCapture(true);
-    try {
-      const orig = origImage || '';
-      const anno = annoImage || '';
+  // ── Research Validation Status State ─────────────────────────────────────
+  const [validationStatus, setValidationStatus] = useState<string>('Validated');
 
+  const VALIDATION_OPTIONS = ['Validated', 'Disputed', 'Poor Quality', 'Excluded'];
+
+  const handleAcceptAndContinue = useCallback(async () => {
+    if (savingCapture) return;
+    setSavingCapture(true);
+
+    try {
       const safeMetadata = metadata || {
         patient_id: patientId || 'PAT_LOCAL',
         visit_id: visitId || 'VIS_LOCAL',
@@ -107,6 +111,8 @@ export default function ReviewScreen() {
         captured_at: new Date().toISOString(),
       };
 
+      // Omit multi-megabyte base64 strings from submit JSON payload to prevent
+      // Android TransactionTooLargeException, OutOfMemoryError, or JSON stringify freeze.
       const payload: SubmitCapturePayload = {
         capture_id: captureResponse?.capture_id || `CAP_${Date.now()}`,
         patient_id: patientId || 'PAT_LOCAL',
@@ -134,11 +140,28 @@ export default function ReviewScreen() {
           grade_label: m?.grade_label || 'Superficial Ulcer',
           recommendation: m?.recommendation,
         },
-        images: {
-          original: orig,
-          annotated: anno,
-        },
+        images: {},
         metadata: safeMetadata,
+        doctor_initial_assessment: {
+          wagner_grade: doctorWagnerGrade,
+          notes: doctorDiagnosis,
+          assessed_by: operatorId || 'DOC_OPERATOR',
+          submitted_before_ai: true,
+        },
+        ai_prediction: {
+          status: m?.wagner_grade ? 'Completed' : 'Pending',
+          wagner_grade: m?.wagner_grade,
+          confidence: m?.confidence,
+        },
+        post_ai_assessment: {
+          wagner_grade: doctorWagnerGrade,
+          notes: doctorDiagnosis,
+        },
+        final_validated_label: {
+          final_wagner_grade: doctorWagnerGrade,
+          validation_status: validationStatus,
+          validated_by: operatorId || 'DOC_OPERATOR',
+        },
         doctor_diagnosis: doctorDiagnosis.trim() || undefined,
         doctor_wagner_grade: doctorWagnerGrade,
         errors: [],
@@ -146,16 +169,18 @@ export default function ReviewScreen() {
       };
 
       await DiabetesCareAPI.submitCapture(payload);
-      navigation.navigate('Success', { patientId, visitId });
-    } catch (_err) {
-      // Proceed even if network has offline fallback
-      navigation.navigate('Success', { patientId, visitId });
+    } catch (err) {
+      console.warn('[SUBMIT WARNING] Network submission deferred to offline storage:', err);
     } finally {
+      imageStore.clear();
       setSavingCapture(false);
+      // Reset navigation stack to release heavy photo state from Android RAM
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Success', params: { patientId: patientId || 'PAT_LOCAL', visitId: visitId || 'VIS_LOCAL' } }],
+      });
     }
   }, [
-    origImage,
-    annoImage,
     captureResponse,
     patientId,
     visitId,
@@ -165,7 +190,10 @@ export default function ReviewScreen() {
     metadata,
     doctorDiagnosis,
     doctorWagnerGrade,
+    validationStatus,
+    operatorId,
     navigation,
+    savingCapture,
   ]);
 
   const qualityPassed = captureResponse?.quality_passed ?? true;

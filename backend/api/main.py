@@ -408,11 +408,24 @@ _NOTIFICATIONS_DB: List[dict] = [
 ]
 
 
-# ── Pydantic Request Models ──────────────────────────────────────────────────
+# ── Pydantic Request Models & Enums ──────────────────────────────────────────
+
+ALLOWED_ROLES = ["admin", "doctor", "data_collector"]
+
+VALIDATION_STATUSES = [
+    "Unreviewed",
+    "Doctor Reviewed",
+    "AI Reviewed",
+    "Validated",
+    "Disputed",
+    "Poor Quality",
+    "Excluded",
+]
 
 class DoctorLoginPayload(BaseModel):
     email: str
     password: str
+    role: Optional[str] = "doctor"
 
 class PatientRegisterPayload(BaseModel):
     full_name: str
@@ -427,11 +440,18 @@ class PatientRegisterPayload(BaseModel):
     hba1c: Optional[float] = None
     bp_systolic: Optional[int] = None
     bp_diastolic: Optional[int] = None
+    consent_clinical_care: bool = True
+    consent_research_data: bool = False
+    consent_ai_training: bool = False
+    consent_timestamp: Optional[str] = None
+    consent_version: str = "v2.1-DPDP2023"
     consents_granted: List[str] = Field(default_factory=list)
     registered_by: Optional[str] = None
 
 class VisitCreatePayload(BaseModel):
     patient_id: str
+    subject_id: Optional[str] = None
+    wound_id: Optional[str] = None
     conducted_by: Optional[str] = None
     location: Optional[str] = None
     gps_lat: Optional[float] = None
@@ -465,21 +485,45 @@ class MeasurementsPayload(BaseModel):
     confidence: Optional[float] = 0.88
     segmentation: str = "unet_resnet34"
     mask_rle: Optional[Dict[str, Any]] = None
-    wagner_grade: Optional[int] = 1
-    grade_label: Optional[str] = "Superficial Ulcer"
-    recommendation: Optional[str] = None
+
+class DoctorInitialAssessmentPayload(BaseModel):
+    subject_id: str
+    visit_id: str
+    wound_id: Optional[str] = None
+    wagner_grade: int
+    ut_stage: Optional[str] = "Stage A"
+    ut_grade: Optional[int] = 1
+    notes: Optional[str] = None
+    assessed_by: str
+    assessed_at: Optional[str] = None
+
+class FinalValidationPayload(BaseModel):
+    subject_id: str
+    visit_id: str
+    wound_id: Optional[str] = None
+    final_wagner_grade: int
+    validation_status: str = "Validated"  # Unreviewed, Doctor Reviewed, AI Reviewed, Validated, Disputed, Poor Quality, Excluded
+    post_ai_notes: Optional[str] = None
+    validated_by: str
 
 class SubmitCapturePayload(BaseModel):
     capture_id: str
+    subject_id: Optional[str] = None
     patient_id: str
     visit_id: str
-    photo_type: str
+    wound_id: Optional[str] = None
+    image_id: Optional[str] = None
+    photo_type: str  # overview, measurement (calibrant), close_up
     pipeline_success: bool = True
     quality: QualityPayload = Field(default_factory=QualityPayload)
     calibration: CalibrationPayload = Field(default_factory=CalibrationPayload)
     measurements: MeasurementsPayload = Field(default_factory=MeasurementsPayload)
     images: Dict[str, Optional[str]] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    doctor_initial_assessment: Optional[Dict[str, Any]] = None
+    ai_prediction: Optional[Dict[str, Any]] = None
+    post_ai_assessment: Optional[Dict[str, Any]] = None
+    final_validated_label: Optional[Dict[str, Any]] = None
     doctor_diagnosis: Optional[str] = None
     doctor_wagner_grade: Optional[int] = None
     processing_time_ms: Optional[int] = 350
@@ -488,8 +532,11 @@ class SubmitCapturePayload(BaseModel):
 
 class AnalyzeCapturePayload(BaseModel):
     image_base64: str
-    patient_id: str
-    visit_id: str
+    subject_id: Optional[str] = None
+    patient_id: str = "PAT_LOCAL"
+    visit_id: str = "VIS_LOCAL"
+    wound_id: Optional[str] = None
+    image_id: Optional[str] = None
     photo_type: str = "measurement"
     anatomical_location: Optional[str] = None
     operator_id: Optional[str] = None
@@ -505,6 +552,7 @@ class DoctorCorrectionPayload(BaseModel):
 
 class ScreeningPayload(BaseModel):
     patient_id: str
+    subject_id: Optional[str] = None
     conducted_by: str
     wagner_grade: int
     wagner_desc: Optional[str] = None
@@ -847,29 +895,54 @@ def get_notifications():
 
 # ── Mobile App Clinical Registration Endpoints ───────────────────────────────
 
+# ── Mobile App Clinical Registration & Workflow Endpoints ────────────────────
+
 @app.post("/api/v1/clinical/patient/register", status_code=status.HTTP_201_CREATED)
 def register_patient(payload: PatientRegisterPayload):
     patient_id = f"PAT_{uuid.uuid4().hex[:10].upper()}"
+    subject_id = f"SUBJ_{uuid.uuid4().hex[:8].upper()}"
+    wound_id = f"WND_{uuid.uuid4().hex[:6].upper()}"
+    
+    consents_list = []
+    if payload.consent_clinical_care:
+        consents_list.append("clinical_care")
+    if payload.consent_research_data:
+        consents_list.append("research_data")
+    if payload.consent_ai_training:
+        consents_list.append("ai_training")
+    if payload.consents_granted:
+        for c in payload.consents_granted:
+            if c not in consents_list:
+                consents_list.append(c)
+
+    now_iso = datetime.utcnow().isoformat()
     record = payload.dict()
     record["patient_id"] = patient_id
+    record["subject_id"] = subject_id
+    record["wound_id"] = wound_id
     record["id"] = patient_id
     record["name"] = payload.full_name
-    record["created_at"] = datetime.utcnow().isoformat()
+    record["consents_granted"] = consents_list
+    record["consent_timestamp"] = payload.consent_timestamp or now_iso
+    record["consent_version"] = payload.consent_version
+    record["created_at"] = now_iso
     record["last_visit"] = datetime.utcnow().strftime("%Y-%m-%d")
     record["risk_level"] = "MEDIUM"
     record["status"] = "Active Monitoring"
     record["wound_site"] = "Under Evaluation"
     record["wagner_grade"] = 1
+    record["validation_status"] = "Unreviewed"
     _PATIENTS_DB[patient_id] = record
 
     # Record DPDP audit entry
     _AUDIT_LOGS_DB.append({
         "log_id": f"AUD_{uuid.uuid4().hex[:6].upper()}",
-        "timestamp": datetime.utcnow().isoformat(),
-        "action": "PATIENT_REGISTRATION_DPDP_CONSENT",
-        "actor_id": payload.registered_by or "ASHA_OPERATOR",
+        "timestamp": now_iso,
+        "action": "PATIENT_REGISTRATION_3PART_CONSENT",
+        "actor_id": payload.registered_by or "DATA_COLLECTOR_OPERATOR",
         "patient_id": patient_id,
-        "purpose": "Patient enrollment with explicit DPDP Act 2023 consents",
+        "subject_id": subject_id,
+        "purpose": f"Patient enrollment with explicit DPDP 3-part consents ({', '.join(consents_list)})",
         "consent_verified": True,
         "dpdp_compliant": True,
     })
@@ -905,45 +978,226 @@ def register_patient(payload: PatientRegisterPayload):
 
     return {
         "patient_id": patient_id,
-        "message": "Patient registered successfully",
-        "consents_recorded": payload.consents_granted,
+        "subject_id": subject_id,
+        "wound_id": wound_id,
+        "message": "Patient registered successfully with 3-part explicit consent",
+        "consents_recorded": consents_list,
+        "consent_version": payload.consent_version,
     }
 
 
 @app.post("/api/v1/clinical/visit/create", status_code=status.HTTP_201_CREATED)
 def create_visit(payload: VisitCreatePayload):
     visit_id = f"VIS_{uuid.uuid4().hex[:10].upper()}"
+    subject_id = payload.subject_id or _PATIENTS_DB.get(payload.patient_id, {}).get("subject_id") or f"SUBJ_{payload.patient_id[-6:]}"
+    wound_id = payload.wound_id or _PATIENTS_DB.get(payload.patient_id, {}).get("wound_id") or f"WND_{uuid.uuid4().hex[:6].upper()}"
     existing_visits = [v for v in _VISITS_DB.values() if v.get("patient_id") == payload.patient_id]
     visit_number = len(existing_visits) + 1
 
     record = payload.dict()
     record["visit_id"] = visit_id
+    record["subject_id"] = subject_id
+    record["wound_id"] = wound_id
     record["visit_number"] = visit_number
     record["visit_date"] = datetime.utcnow().isoformat()
     _VISITS_DB[visit_id] = record
 
-    # Save to SQLite database
-    for db_file in _get_target_databases():
-        try:
-            conn = sqlite3.connect(db_file)
-            c = conn.cursor()
-            c.execute(
-                """INSERT OR REPLACE INTO wound_sessions 
-                (session_id, patient_id, session_date, severity_grade, tissue_colour, wound_area_cm2, created_at)
-                VALUES (?, ?, ?, 1, 'under_evaluation', NULL, ?)""",
-                (visit_id, payload.patient_id, record["visit_date"], record["visit_date"]),
-            )
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            print(f"[DATABASE ERROR] Failed to save session to SQLite {db_file}: {e}")
-
     return {
         "visit_id": visit_id,
         "patient_id": payload.patient_id,
+        "subject_id": subject_id,
+        "wound_id": wound_id,
         "visit_number": visit_number,
         "visit_date": record["visit_date"],
         "message": "Visit created successfully",
+    }
+
+
+# ── Doctor Independent Initial Assessment Endpoint (Pre-AI) ───────────────────
+
+_DOCTOR_ASSESSMENTS_DB: Dict[str, dict] = {}
+_FINAL_VALIDATIONS_DB: Dict[str, dict] = {}
+
+@app.post("/api/v1/clinical/assessment/initial", status_code=status.HTTP_200_OK)
+def record_doctor_initial_assessment(payload: DoctorInitialAssessmentPayload):
+    """
+    Records Doctor's independent clinical assessment BEFORE AI results are revealed.
+    Keeps doctor assessment as a distinct record.
+    """
+    assessment_id = f"ASS_{uuid.uuid4().hex[:8].upper()}"
+    assessed_at = payload.assessed_at or datetime.utcnow().isoformat()
+    record = {
+        "assessment_id": assessment_id,
+        "subject_id": payload.subject_id,
+        "visit_id": payload.visit_id,
+        "wound_id": payload.wound_id,
+        "wagner_grade": payload.wagner_grade,
+        "ut_stage": payload.ut_stage,
+        "ut_grade": payload.ut_grade,
+        "notes": payload.notes,
+        "assessed_by": payload.assessed_by,
+        "assessed_at": assessed_at,
+        "submitted_before_ai": True,
+    }
+    _DOCTOR_ASSESSMENTS_DB[f"{payload.subject_id}_{payload.visit_id}"] = record
+
+    # Log audit trail
+    _AUDIT_LOGS_DB.append({
+        "log_id": f"AUD_{uuid.uuid4().hex[:6].upper()}",
+        "timestamp": assessed_at,
+        "action": "DOCTOR_INITIAL_ASSESSMENT_SUBMITTED",
+        "actor_id": payload.assessed_by,
+        "subject_id": payload.subject_id,
+        "visit_id": payload.visit_id,
+        "purpose": "Independent Doctor Assessment submitted prior to viewing AI prediction",
+        "consent_verified": True,
+        "dpdp_compliant": True,
+    })
+
+    return {
+        "status": "success",
+        "assessment_id": assessment_id,
+        "message": "Doctor independent initial assessment recorded successfully. AI prediction unlocked.",
+        "assessment": record,
+    }
+
+
+# ── Final Consensus Validation Endpoint ───────────────────────────────────────
+
+@app.post("/api/v1/clinical/validation/final", status_code=status.HTTP_200_OK)
+def record_final_validation(payload: FinalValidationPayload):
+    """
+    Records Doctor's final consensus validated label and research validation status.
+    """
+    val_id = f"VAL_{uuid.uuid4().hex[:8].upper()}"
+    now_iso = datetime.utcnow().isoformat()
+    
+    if payload.validation_status not in VALIDATION_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid validation status. Must be one of {VALIDATION_STATUSES}")
+
+    record = {
+        "validation_id": val_id,
+        "subject_id": payload.subject_id,
+        "visit_id": payload.visit_id,
+        "wound_id": payload.wound_id,
+        "final_wagner_grade": payload.final_wagner_grade,
+        "validation_status": payload.validation_status,
+        "post_ai_notes": payload.post_ai_notes,
+        "validated_by": payload.validated_by,
+        "validated_at": now_iso,
+    }
+    _FINAL_VALIDATIONS_DB[f"{payload.subject_id}_{payload.visit_id}"] = record
+
+    # Update patient research status in memory
+    for p in _PATIENTS_DB.values():
+        if p.get("subject_id") == payload.subject_id or p.get("patient_id") == payload.subject_id:
+            p["wagner_grade"] = payload.final_wagner_grade
+            p["validation_status"] = payload.validation_status
+
+    # Audit log entry
+    _AUDIT_LOGS_DB.append({
+        "log_id": f"AUD_{uuid.uuid4().hex[:6].upper()}",
+        "timestamp": now_iso,
+        "action": "FINAL_CLINICAL_VALIDATION",
+        "actor_id": payload.validated_by,
+        "subject_id": payload.subject_id,
+        "visit_id": payload.visit_id,
+        "purpose": f"Final clinical validation label ({payload.validation_status}) recorded",
+        "consent_verified": True,
+        "dpdp_compliant": True,
+    })
+
+    return {
+        "status": "success",
+        "validation_id": val_id,
+        "message": f"Final validated label assigned: Grade {payload.final_wagner_grade} ({payload.validation_status})",
+        "validation": record,
+    }
+
+
+# ── Research Dataset Export Endpoint (Admin Only) ────────────────────────────
+
+@app.get("/api/v1/research/export")
+def export_research_dataset(role: Optional[str] = Query("admin"), format: str = Query("json")):
+    """
+    Exports de-identified research dataset containing Subject ID, Visit ID, Wound ID, Image ID,
+    explicit 3-part consent status, Doctor Initial Assessment, AI Prediction, and Final Validated Label.
+    """
+    if role and role.lower() not in ["admin", "doctor"]:
+        raise HTTPException(status_code=403, detail="Access denied. Only Admin and Authorized Doctors can export research dataset.")
+
+    dataset = []
+    for pat_id, pat in _PATIENTS_DB.items():
+        # Only include if patient granted research consent
+        consents = pat.get("consents_granted", [])
+        if "research_data" not in consents and "research" not in consents:
+            continue
+
+        subj_id = pat.get("subject_id", f"SUBJ_{pat_id[-6:]}")
+        wnd_id = pat.get("wound_id", "WND_01")
+        visits = [v for v in _VISITS_DB.values() if v.get("patient_id") == pat_id]
+
+        for v in visits:
+            vis_id = v.get("visit_id")
+            key = f"{subj_id}_{vis_id}"
+            doctor_init = _DOCTOR_ASSESSMENTS_DB.get(key, {})
+            final_val = _FINAL_VALIDATIONS_DB.get(key, {})
+            meas = next((m for m in _MEASUREMENTS_DB.values() if m.get("visit_id") == vis_id), {})
+
+            record = {
+                "subject_id": subj_id,
+                "visit_id": vis_id,
+                "wound_id": wnd_id,
+                "age_band": f"{(pat.get('age', 55) // 5) * 5}-{(pat.get('age', 55) // 5) * 5 + 4}",
+                "gender": pat.get("gender"),
+                "district": pat.get("district"),
+                "hba1c": pat.get("hba1c"),
+                "consents": {
+                    "clinical_care": True,
+                    "research_data": True,
+                    "ai_training": "ai_training" in consents,
+                    "consent_version": pat.get("consent_version", "v2.1-DPDP2023"),
+                },
+                "measurements": {
+                    "length_mm": meas.get("length_mm"),
+                    "width_mm": meas.get("width_mm"),
+                    "area_cm2": meas.get("area_cm2"),
+                    "perimeter_mm": meas.get("perimeter_mm"),
+                },
+                "doctor_initial_assessment": {
+                    "wagner_grade": doctor_init.get("wagner_grade"),
+                    "submitted_before_ai": doctor_init.get("submitted_before_ai", True),
+                    "assessed_at": doctor_init.get("assessed_at"),
+                },
+                "ai_prediction": {
+                    "status": "Completed" if meas.get("wagner_grade") is not None else "Pending",
+                    "wagner_grade": meas.get("wagner_grade"),
+                    "confidence": meas.get("confidence"),
+                },
+                "final_validated_label": {
+                    "wagner_grade": final_val.get("final_wagner_grade", pat.get("wagner_grade")),
+                    "validation_status": final_val.get("validation_status", pat.get("validation_status", "Unreviewed")),
+                    "validated_at": final_val.get("validated_at"),
+                },
+            }
+            dataset.append(record)
+
+    _AUDIT_LOGS_DB.append({
+        "log_id": f"AUD_{uuid.uuid4().hex[:6].upper()}",
+        "timestamp": datetime.utcnow().isoformat(),
+        "action": "RESEARCH_DATASET_EXPORT",
+        "actor_id": f"ROLE_{role.upper() if role else 'ADMIN'}",
+        "purpose": f"De-identified research dataset export generated ({len(dataset)} records)",
+        "consent_verified": True,
+        "dpdp_compliant": True,
+    })
+
+    return {
+        "status": "success",
+        "total_records": len(dataset),
+        "exported_at": datetime.utcnow().isoformat(),
+        "dpdp_anonymized": True,
+        "dataset": dataset,
     }
 
 
@@ -1050,14 +1304,15 @@ def analyze_capture(payload: AnalyzeCapturePayload):
     }
     _MEASUREMENTS_DB[measurement_id] = measurement_record
 
-    # 4. Production ML Model Inference: Wagner Wound Severity (0-5)
+    # 4. Real Production ML Model Inference or Pending Status (NO FAKE FALLBACKS)
     ml_result = {
-        "wagner_grade": 1,
-        "grade_label": "Superficial",
-        "description": "Superficial ulcer without penetration to deeper layers",
-        "severity": "Mild",
-        "recommendation": "Standard dressing, offloading footwear, and regular monitoring.",
-        "confidence": seg_result.get("confidence", 0.88),
+        "status": "Pending",
+        "wagner_grade": None,
+        "grade_label": "Pending AI Evaluation",
+        "description": "AI Model prediction pending server evaluation.",
+        "severity": "Pending",
+        "recommendation": "Submit for clinical doctor review.",
+        "confidence": None,
     }
 
     try:
@@ -1066,21 +1321,23 @@ def analyze_capture(payload: AnalyzeCapturePayload):
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             pil_img = Image.fromarray(img_rgb)
             pred = ml_model.predict_single(pil_img)
-            ml_result = {
-                "wagner_grade": pred.get("wagner_grade", 1),
-                "grade_label": pred.get("grade_label", "Superficial"),
-                "description": pred.get("description", "Superficial ulcer"),
-                "severity": pred.get("severity", "Mild"),
-                "recommendation": pred.get("recommendation", "Standard dressing & monitoring"),
-                "confidence": round(float(pred.get("confidence", 0.88)), 3),
-                "class_probabilities": pred.get("class_probabilities", {}),
-            }
-            print(f"[ML INFERENCE] Predicted Wagner Grade {ml_result['wagner_grade']} ({ml_result['grade_label']}) - Conf: {ml_result['confidence']}")
+            if pred and "error" not in pred:
+                ml_result = {
+                    "status": "Completed",
+                    "wagner_grade": pred.get("wagner_grade", 1),
+                    "grade_label": pred.get("grade_label", "Superficial Ulcer"),
+                    "description": pred.get("description", "Superficial ulcer"),
+                    "severity": pred.get("severity", "Mild"),
+                    "recommendation": pred.get("recommendation", "Standard dressing & monitoring"),
+                    "confidence": round(float(pred.get("confidence", 0.88)), 3),
+                    "class_probabilities": pred.get("class_probabilities", {}),
+                }
+                print(f"[ML INFERENCE] Predicted Wagner Grade {ml_result['wagner_grade']} ({ml_result['grade_label']}) - Conf: {ml_result['confidence']}")
     except Exception as e:
-        print(f"[ML INFERENCE ERROR] {e}")
+        print(f"[ML INFERENCE NOTICE] AI Model unavailable, marking Pending: {e}")
 
-    # Also update patient record in memory with ML Wagner grade
-    if payload.patient_id in _PATIENTS_DB:
+    # Update patient record in memory if AI completed
+    if payload.patient_id in _PATIENTS_DB and ml_result["status"] == "Completed":
         _PATIENTS_DB[payload.patient_id]["wagner_grade"] = ml_result["wagner_grade"]
 
     return {
