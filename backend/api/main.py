@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field
 from cv.preprocessing.quality import assess_image_quality
 from cv.preprocessing.calibrant_detection import detect_calibrant_sticker
 from cv.segmentation.wound_segmentation import segment_and_measure_wound
+from ml.skin_classifier.api import router as skin_classifier_router
 
 app = FastAPI(
     title="DiabetesCare AI — Unified Master API",
@@ -45,6 +46,8 @@ app = FastAPI(
     ),
     version="2.0.0",
 )
+
+app.include_router(skin_classifier_router)
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(

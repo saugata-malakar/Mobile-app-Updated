@@ -19,17 +19,17 @@ import {
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { UserPersona } from './PortalLoginScreen';
 
-const NAVY_BG   = '#0B132B';
-const SIDEBAR_BG= '#0E1736';
-const CARD_BG   = '#111C38';
-const SUB_CARD  = '#0C152E';
-const BORDER    = '#23355E';
+const NAVY_BG = '#0B132B';
+const SIDEBAR_BG = '#0E1736';
+const CARD_BG = '#111C38';
+const SUB_CARD = '#0C152E';
+const BORDER = '#23355E';
 const BORDER_LIGHT = '#1E2E56';
-const BLUE_BTN  = '#2563EB';
-const EMERALD   = '#10B981';
-const AMBER     = '#F59E0B';
-const RED       = '#EF4444';
-const INDIGO    = '#6366F1';
+const BLUE_BTN = '#2563EB';
+const EMERALD = '#10B981';
+const AMBER = '#F59E0B';
+const RED = '#EF4444';
+const INDIGO = '#6366F1';
 const TEXT_MUTED = '#94A3B8';
 
 interface PatientRecord {
@@ -336,6 +336,26 @@ export default function DoctorCommandHubScreen() {
 
       {/* ── Main View Content Area ── */}
       <ScrollView contentContainerStyle={styles.mainScroll} showsVerticalScrollIndicator={false}>
+
+        {/* Skin Disease Classification */}
+        <View style={styles.viewContainer}>
+          <View style={styles.card}>
+            <Text style={styles.cardHeaderTitle}>
+              🔬 AI Skin Assessment
+            </Text>
+            <Text style={styles.guideItem}>
+              Capture a skin image, select the affected body part and
+              visible features, and obtain an experimental AI screening result.
+            </Text>
+            <TouchableOpacity
+              style={[styles.bigCaptureBtn, { marginTop: 12 }]}
+              onPress={() => navigation.navigate('SkinAssessment')}>
+              <Text style={styles.bigCaptureBtnText}>
+                Open Skin Assessment →
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* ═══════════════════════════════════════════════════════════════════
             OPTION 1: "My Healing Journey" (/patient-portal)

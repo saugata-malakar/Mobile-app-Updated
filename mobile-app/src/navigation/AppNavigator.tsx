@@ -12,6 +12,9 @@ import PhotoFlowScreen from '../screens/PhotoFlowScreen';
 import CaptureScreen from '../screens/CaptureScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import SuccessScreen from '../screens/SuccessScreen';
+import SkinAssessmentScreen from '../screens/SkinAssessmentScreen';
+import SkinResultScreen from '../screens/SkinResultScreen';
+import type { SkinPredictionResponse } from '../services/skinClassifierApi';
 
 // ── Route Param Definitions ────────────────────────────────────────────────
 export type RootStackParamList = {
@@ -55,6 +58,13 @@ export type RootStackParamList = {
       grade_label?: string;
       recommendation?: string;
     };
+  };
+  SkinAssessment: undefined;
+
+  SkinResult: {
+    result: SkinPredictionResponse;
+    bodyPart: string;
+    descriptors: string[];
   };
   Success: { patientId: string; visitId: string };
 };
@@ -107,6 +117,17 @@ export default function AppNavigator() {
           name="Success"
           component={SuccessScreen}
           options={{ title: 'Collection Complete', headerLeft: () => null }}
+        />
+        <Stack.Screen
+          name="SkinAssessment"
+          component={SkinAssessmentScreen}
+          options={{ title: 'Skin Assessment' }}
+        />
+
+        <Stack.Screen
+          name="SkinResult"
+          component={SkinResultScreen}
+          options={{ title: 'Skin Screening Result' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
