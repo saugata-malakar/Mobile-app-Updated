@@ -43,6 +43,7 @@ import AshaPatientSearch from '../screens/AshaPatientSearch';
 import AshaWoundSiteSetup from '../screens/AshaWoundSiteSetup';
 import AshaMonitoringSession from '../screens/AshaMonitoringSession';
 import AshaScreeningResult from '../screens/AshaScreeningResult';
+import WoundAssessmentScreen from '../screens/WoundAssessmentScreen';
 import type {TeleconsultPrescription} from '../types/teleconsult';
 
 /** Passed along the screening flow (language → condition → camera → result). */
@@ -126,6 +127,7 @@ export type RootStackParamList = {
     language?: 'en' | 'bn';
   };
   NotificationSettings: undefined;
+  WoundAssessment: undefined;
   WoundSiteSelector: undefined;
   WoundMonitorHome: {wound_site_id: string; wound_site_label: string};
   WoundSessionGuide: {
@@ -238,6 +240,7 @@ export default function RootNavigator() {
         <Stack.Screen name="TeleconsultComplete" component={TeleconsultCompleteScreen} />
         <Stack.Screen name="PrescriptionDetail" component={PrescriptionDetailScreen} />
         <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+        <Stack.Screen name="WoundAssessment" component={WoundAssessmentScreen} />
         <Stack.Screen name="WoundSiteSelector" component={WoundSiteSelector} />
         <Stack.Screen name="WoundMonitorHome" component={WoundMonitorHome} />
         <Stack.Screen name="WoundSessionGuide" component={WoundSessionGuide} />

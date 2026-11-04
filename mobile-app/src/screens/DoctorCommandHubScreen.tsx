@@ -271,6 +271,7 @@ export default function DoctorCommandHubScreen() {
 
   // ── The 5 Primary Options + Command Hub ──
   const navTabs = [
+    { id: 'wound_assessment', label: '🔬 AI Wound Assessment', icon: '🔬' },
     { id: 'healing_journey', label: '1. My Healing Journey', icon: '🩹' },
     { id: 'teleconsult', label: '2. Join Govt Teleconsult', icon: '📹' },
     { id: 'camera_flow', label: '3. Mobile Camera Flow', icon: '📱' },
@@ -297,9 +298,14 @@ export default function DoctorCommandHubScreen() {
 
         <View style={styles.topHeaderRight}>
           <TouchableOpacity
+            style={[styles.mobileSimBtn, { backgroundColor: '#10B981', marginRight: 6 }]}
+            onPress={() => navigation.navigate('WoundAssessment')}>
+            <Text style={styles.mobileSimBtnText}>🔬 AI Model Workstation</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.mobileSimBtn}
             onPress={() => launchCamera()}>
-            <Text style={styles.mobileSimBtnText}>📱 Launch Simulator</Text>
+            <Text style={styles.mobileSimBtnText}>📱 Simulator</Text>
           </TouchableOpacity>
           <View style={styles.fastApiBadge}>
             <View style={styles.greenPulse} />
@@ -559,6 +565,60 @@ export default function DoctorCommandHubScreen() {
                 </View>
               </View>
             )}
+          </View>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            AI WOUND ASSESSMENT & MODEL EVALUATION WORKSTATION
+            (Runs fine-tuned YOLO11s detector + SAM2 Global-Local segmentor)
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'wound_assessment' && (
+          <View style={styles.viewContainer}>
+            <View style={styles.commandBanner}>
+              <View style={styles.deptBadgeRow}>
+                <Text style={styles.deptLabel}>AI CLINICAL MODEL WORKSTATION</Text>
+                <View style={[styles.hubBadge, { backgroundColor: 'rgba(16, 185, 129, 0.2)' }]}>
+                  <Text style={[styles.hubBadgeText, { color: EMERALD }]}>YOLO11 + SAM2 Active</Text>
+                </View>
+              </View>
+              <Text style={styles.commandTitle}>AI Wound Segmentation & Assessment</Text>
+              <Text style={styles.commandSubtitle}>
+                Live evaluation portal for clinicians and researchers. Capture patient wound photographs, inspect dual-tone margin outlines, generate pure binary masks, and review calibrated morphometrics.
+              </Text>
+            </View>
+
+            {/* Quick Action Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardHeaderTitle}>🔬 Clinical Model Evaluation Options</Text>
+              <Text style={styles.patDetails}>
+                Tap below to launch the dedicated camera assessment workstation to click wound photos, run YOLO11 + SAM2 inference, and inspect boundaries:
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.bigCaptureBtn, { marginTop: 14, backgroundColor: BLUE }]}
+                onPress={() => navigation.navigate('WoundAssessment')}>
+                <Text style={styles.bigCaptureBtnText}>📸 Launch AI Camera Assessment Workstation →</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.bigCaptureBtn, { marginTop: 10, backgroundColor: '#0F1A3A', borderWidth: 1, borderColor: '#23355E' }]}
+                onPress={() => launchCamera('PAT_KGP_01')}>
+                <Text style={[styles.bigCaptureBtnText, { color: '#93C5FD' }]}>
+                  📱 Standard 3-Photo Checklist Protocol →
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Model Architecture & Specs Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardHeaderTitle}>⚙️ Active Neural Network Architecture</Text>
+              <Text style={styles.guideItem}>• Primary Detector: Fine-Tuned YOLO11s Ulcer Bounding Box Model</Text>
+              <Text style={styles.guideItem}>• Precision Segmentor: Fine-Tuned SAM2 (Hiera Small) Global-Local Dual Stream</Text>
+              <Text style={styles.guideItem}>• Visual Overlay: Dual-tone high-contrast boundaries (4px red + 2px bright yellow)</Text>
+              <Text style={styles.guideItem}>• Mask Engine: Pure binary segmentation mask (White = Ulcer Bed, Black = Background)</Text>
+              <Text style={styles.guideItem}>• Morphometrics Engine: Feret caliper length, orthogonal width, 2D area (cm²), perimeter</Text>
+              <Text style={styles.guideItem}>• Tissue Breakdown: Color-space deconvolution (Granulation %, Slough %, Necrotic %)</Text>
+            </View>
           </View>
         )}
 

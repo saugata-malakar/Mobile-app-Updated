@@ -198,6 +198,12 @@ export default function PatientHome({navigation}: {navigation: Nav}) {
             <Text style={styles.hubHint}>Monthly · P17–P19</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.hubCard, { borderColor: '#10B981', borderWidth: 1 }]}
+            onPress={() => (navigation as any).navigate('WoundAssessment')}>
+            <Text style={[styles.hubTitle, { color: '#34D399' }]}>AI Wound Test</Text>
+            <Text style={styles.hubHint}>YOLO11 + SAM2 · Live</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.hubCard}
             onPress={() => navigation.navigate('ContributingFactorHome')}>
             <Text style={styles.hubTitle}>Blood & eye</Text>

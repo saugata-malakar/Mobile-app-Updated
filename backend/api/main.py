@@ -1558,6 +1558,85 @@ def analyze_capture(payload: AnalyzeCapturePayload):
     }
 
 
+# ── Dedicated AI Wound Segmentation & Assessment Endpoints ───────────────────
+class WoundSegmentRequest(BaseModel):
+    image_base64: str
+    pixels_per_mm: Optional[float] = 10.0
+    conf_threshold: Optional[float] = 0.15
+
+
+@app.post("/api/v1/wound/segment")
+def segment_wound_endpoint(req: WoundSegmentRequest):
+    """
+    Dedicated endpoint for the mobile app and doctor dashboard AI Assessment section.
+    Runs YOLO11 detection and SAM2 Global-Local segmentation.
+    Returns boundary-marked annotated image, pure binary mask, and morphometrics.
+    """
+    b64 = req.image_base64
+    if "," in b64:
+        b64 = b64.split(",", 1)[1]
+
+    try:
+        img_bytes = base64.b64decode(b64)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            raise HTTPException(status_code=400, detail="Could not decode image")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image decode error: {e}")
+
+    seg = segment_and_measure_wound(
+        img,
+        pixels_per_mm=req.pixels_per_mm or 10.0,
+    )
+
+    return {
+        "success": True,
+        "annotated_b64": seg.get("annotated_b64", ""),
+        "mask_b64": seg.get("mask_b64", ""),
+        "area_cm2": seg.get("area_cm2", 0.0),
+        "length_mm": seg.get("length_mm", 0.0),
+        "width_mm": seg.get("width_mm", 0.0),
+        "perimeter_mm": seg.get("perimeter_mm", 0.0),
+        "confidence": seg.get("confidence", 0.0),
+        "tissue": seg.get("tissue", {}),
+        "num_lesions": seg.get("num_lesions", 1),
+        "method": seg.get("method", "yolo11_sam2_global_local"),
+    }
+
+
+@app.post("/api/v1/wound/segment-upload")
+async def segment_wound_upload_endpoint(
+    file: UploadFile = File(...),
+    pixels_per_mm: float = 10.0,
+):
+    """
+    Multipart upload endpoint for direct file upload from web forms or doctor portal.
+    """
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if img is None:
+        raise HTTPException(status_code=400, detail="Could not decode uploaded image")
+
+    seg = segment_and_measure_wound(img, pixels_per_mm=pixels_per_mm)
+
+    return {
+        "success": True,
+        "annotated_b64": seg.get("annotated_b64", ""),
+        "mask_b64": seg.get("mask_b64", ""),
+        "area_cm2": seg.get("area_cm2", 0.0),
+        "length_mm": seg.get("length_mm", 0.0),
+        "width_mm": seg.get("width_mm", 0.0),
+        "perimeter_mm": seg.get("perimeter_mm", 0.0),
+        "confidence": seg.get("confidence", 0.0),
+        "tissue": seg.get("tissue", {}),
+        "num_lesions": seg.get("num_lesions", 1),
+        "method": seg.get("method", "yolo11_sam2_global_local"),
+    }
+
+
+
 def save_capture_to_sqlite_and_disk(payload: SubmitCapturePayload, photo_id: str, measurement_id: str) -> dict:
     saved_files = []
     timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
