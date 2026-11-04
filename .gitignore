@@ -56,3 +56,15 @@ datasets/
 *.zip
 *.tar.gz
 
+# Local backups
+*.bak
+
+# Deep learning model weights (do not commit >100MB files to git)
+*.pth
+*.pt
+*.tflite
+*.onnx
+models/sam2/*.pth
+models/sam2/*.pt
+scripts/test_wound_output.jpg
+platform-tools/
