@@ -18,6 +18,7 @@ import SettingsPage from './pages/SettingsPage';
 import PatientPortal from './pages/PatientPortal';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileAppSimulator from './pages/MobileAppSimulator';
+import ModelAssessmentPage from './pages/ModelAssessmentPage';
 
 function ProtectedRoute({ children }) {
   if (!getToken()) {
@@ -57,6 +58,7 @@ function AppShell() {
     <Layout doctor={doctor}>
       <Routes>
         <Route path="/" element={<DoctorDashboard />} />
+        <Route path="/model-assessment" element={<ModelAssessmentPage />} />
         <Route path="/admin-overview" element={<AdminDashboard />} />
         <Route path="/patient-portal" element={<PatientPortal />} />
         <Route path="/mobile-simulator" element={<MobileAppSimulator />} />

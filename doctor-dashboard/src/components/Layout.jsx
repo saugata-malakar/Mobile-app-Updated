@@ -26,6 +26,7 @@ export default function Layout({ doctor, children }) {
     roleBadge = 'Statutory Oversight';
     navItems = [
       { to: '/admin-overview', label: 'Hospital Operations', icon: '🏥' },
+      { to: '/model-assessment', label: 'AI Wound Assessment (YOLO11+SAM2)', icon: '🔬' },
       { to: '/department', label: 'Department Triage', icon: '⚡' },
       { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
       { to: '/asha', label: 'ASHA Field Workforce', icon: '👩‍⚕️' },
@@ -38,6 +39,7 @@ export default function Layout({ doctor, children }) {
     roleBadge = 'MRN: PAT_KGP_01';
     navItems = [
       { to: '/patient-portal', label: 'My Healing Journey', icon: '🩹' },
+      { to: '/model-assessment', label: 'AI Wound Assessment', icon: '🔬' },
       { to: '/teleconsults', label: 'Join Govt Teleconsult', icon: '📹' },
       { to: '/mobile-simulator', label: 'Mobile Camera Capture Flow', icon: '📱' },
       { to: '/patients/PAT_KGP_01', label: 'Full Wound Trajectory', icon: '📈' },
@@ -47,6 +49,7 @@ export default function Layout({ doctor, children }) {
     // Doctor (default)
     navItems = [
       { to: '/', label: 'Clinical Triage Queue', icon: '⚡' },
+      { to: '/model-assessment', label: 'AI Wound Assessment (YOLO11+SAM2)', icon: '🔬' },
       { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
       { to: '/patients/PAT_KGP_01', label: 'Wound Trajectory & Overrides', icon: '🩹' },
       { to: '/teleconsults', label: 'National Teleconsult (eSanjeevani)', icon: '📹' },

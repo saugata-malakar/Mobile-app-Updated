@@ -12,6 +12,7 @@ import PhotoFlowScreen from '../screens/PhotoFlowScreen';
 import CaptureScreen from '../screens/CaptureScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import SuccessScreen from '../screens/SuccessScreen';
+import WoundAssessmentScreen from '../screens/WoundAssessmentScreen';
 
 // ── Route Param Definitions ────────────────────────────────────────────────
 export type RootStackParamList = {
@@ -20,6 +21,7 @@ export type RootStackParamList = {
     userRole?: 'doctor' | 'patient' | 'asha' | 'hospital_admin';
     userProfile?: any;
   };
+  WoundAssessment: undefined;
   PatientRegistration: undefined;
   PhotoFlow: {
     patientId: string;
@@ -102,6 +104,11 @@ export default function AppNavigator() {
           name="Review"
           component={ReviewScreen}
           options={{ title: 'AI Analysis & Review' }}
+        />
+        <Stack.Screen
+          name="WoundAssessment"
+          component={WoundAssessmentScreen}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Success"

@@ -461,4 +461,28 @@ export const DiabetesCareAPI = {
   /** Get all visits for a patient */
   getVisits: (patientId: string) =>
     get<{ visits: VisitResponse[] }>(`/clinical/patient/${encodeURIComponent(patientId)}/visits`),
+
+  /** Run YOLO11 and SAM2 Global-Local wound segmentation */
+  segmentWound: (imageBase64: string, pixelsPerMm: number = 10.0, confThreshold: number = 0.15) =>
+    post<{
+      success: boolean;
+      annotated_b64: string;
+      mask_b64: string;
+      area_cm2: number;
+      length_mm: number;
+      width_mm: number;
+      perimeter_mm: number;
+      confidence: number;
+      tissue: {
+        granulation_pct?: number;
+        slough_pct?: number;
+        necrotic_pct?: number;
+      };
+      num_lesions: number;
+      method: string;
+    }>('/wound/segment', {
+      image_base64: imageBase64,
+      pixels_per_mm: pixelsPerMm,
+      conf_threshold: confThreshold,
+    }),
 };
