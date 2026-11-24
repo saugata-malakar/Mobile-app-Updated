@@ -1,4 +1,4 @@
-package com.helloworld
+package com.iitkgp.diabetescareai
 
 import android.app.Application
 import com.facebook.react.PackageList

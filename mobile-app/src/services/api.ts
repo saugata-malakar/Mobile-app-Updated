@@ -3,12 +3,13 @@
 
 // No React Native imports needed — this is a pure HTTP service module
 
-// ── Base URL ───────────────────────────────────────────────────────────────
-// Uses the PC's real LAN IP so physical devices on the same Wi-Fi network can connect.
-// Fallback to offline mode is supported automatically when away from the PC network.
-const BASE_URL = 'http://192.168.31.94:8000';
+import {getApiBaseUrl} from '../config/api';
 
-const API = `${BASE_URL}/api/v1`;
+// ── Base URL ───────────────────────────────────────────────────────────────
+// Dynamically resolves Metro-detected IP, emulator alias, or user-configured server URL.
+function getApiRoot(): string {
+  return `${getApiBaseUrl()}/api/v1`;
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 2
 }
 
 async function post<T>(path: string, body: object, timeoutMs = 2500): Promise<T> {
-  const res = await fetchWithTimeout(`${API}${path}`, {
+  const res = await fetchWithTimeout(`${getApiRoot()}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -238,7 +239,7 @@ async function post<T>(path: string, body: object, timeoutMs = 2500): Promise<T>
 }
 
 async function patch<T>(path: string, body: object, timeoutMs = 2500): Promise<T> {
-  const res = await fetchWithTimeout(`${API}${path}`, {
+  const res = await fetchWithTimeout(`${getApiRoot()}${path}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -251,7 +252,7 @@ async function patch<T>(path: string, body: object, timeoutMs = 2500): Promise<T
 }
 
 async function get<T>(path: string, timeoutMs = 2500): Promise<T> {
-  const res = await fetchWithTimeout(`${API}${path}`, {}, timeoutMs);
+  const res = await fetchWithTimeout(`${getApiRoot()}${path}`, {}, timeoutMs);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || `HTTP ${res.status}`);
@@ -260,7 +261,7 @@ async function get<T>(path: string, timeoutMs = 2500): Promise<T> {
 }
 
 async function postForm<T>(path: string, form: FormData, timeoutMs = 3500): Promise<T> {
-  const res = await fetchWithTimeout(`${API}${path}`, {
+  const res = await fetchWithTimeout(`${getApiRoot()}${path}`, {
     method: 'POST',
     body: form,
   }, timeoutMs);

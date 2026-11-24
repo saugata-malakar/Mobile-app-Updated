@@ -43,6 +43,26 @@ import AshaPatientSearch from '../screens/AshaPatientSearch';
 import AshaWoundSiteSetup from '../screens/AshaWoundSiteSetup';
 import AshaMonitoringSession from '../screens/AshaMonitoringSession';
 import AshaScreeningResult from '../screens/AshaScreeningResult';
+import DoctorHomeScreen from '../screens/doctor/DoctorHomeScreen';
+import DoctorQueueScreen from '../screens/doctor/DoctorQueueScreen';
+import ReportUploadScreen from '../screens/doctor/ReportUploadScreen';
+import ClinicalNoteScreen from '../screens/doctor/ClinicalNoteScreen';
+import FieldWorkerHomeScreen from '../screens/field_worker/FieldWorkerHomeScreen';
+import ModeratorHomeScreen from '../screens/moderator/ModeratorHomeScreen';
+import ModeratorReviewScreen from '../screens/moderator/ModeratorReviewScreen';
+import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
+import PatientDetailsForm from '../screens/shared/PatientDetailsForm';
+import ThreePhotoCapture from '../screens/shared/ThreePhotoCapture';
+import ReviewAndSubmitScreen from '../screens/shared/ReviewAndSubmitScreen';
+import SubmissionResultScreen from '../screens/shared/SubmissionResultScreen';
+import type {
+  AppRole,
+  CapturedPhoto,
+  ClinicalNoteDraft,
+  MedicalReportFile,
+  PatientDetailsDraft,
+  SubmissionRecord,
+} from '../types/app';
 import type {TeleconsultPrescription} from '../types/teleconsult';
 
 /** Passed along the screening flow (language → condition → camera → result). */
@@ -71,7 +91,53 @@ export type WoundCameraFlowParams = {
 export type RootStackParamList = {
   SplashScreen: undefined;
   RoleSelect: undefined;
-  Login: {role: 'asha' | 'patient'};
+  Login: {role: AppRole | 'asha' | 'patient'};
+  DoctorHome: undefined;
+  DoctorQueue: undefined;
+  FieldWorkerHome: undefined;
+  ModeratorHome: undefined;
+  ModeratorReview: {submission: SubmissionRecord};
+  AdminHome: undefined;
+  PatientDetailsForm: {
+    role: AppRole;
+    isFollowup?: boolean;
+    patientId?: string;
+  };
+  ThreePhotoCapture: {
+    role: AppRole;
+    submissionId?: string;
+    patientId?: string;
+    patientDetails?: PatientDetailsDraft;
+  };
+  ReportUpload: {
+    role: AppRole;
+    submissionId: string;
+    patientId?: string;
+    patientDetails: PatientDetailsDraft;
+    photos: CapturedPhoto[];
+  };
+  ClinicalNote: {
+    mode?: 'own' | 'validate';
+    role?: AppRole;
+    submissionId: string;
+    patientId?: string;
+    patientDetails?: PatientDetailsDraft;
+    photos?: CapturedPhoto[];
+    reports?: MedicalReportFile[];
+  };
+  ReviewAndSubmit: {
+    role: AppRole;
+    submissionId: string;
+    patientId?: string;
+    patientDetails: PatientDetailsDraft;
+    photos: CapturedPhoto[];
+    reports?: MedicalReportFile[];
+    clinicalNote?: ClinicalNoteDraft;
+  };
+  SubmissionResult: {
+    role: AppRole;
+    submission?: SubmissionRecord;
+  };
   PatientRegistration: {
     flow?: 'first_time' | 'patient_edit' | 'asha_new' | 'asha_edit';
     ashaPatientId?: string;
@@ -216,6 +282,18 @@ export default function RootNavigator() {
         <Stack.Screen name="SplashScreen" component={SplashScreen} />
         <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="DoctorHome" component={DoctorHomeScreen} />
+        <Stack.Screen name="DoctorQueue" component={DoctorQueueScreen} />
+        <Stack.Screen name="FieldWorkerHome" component={FieldWorkerHomeScreen} />
+        <Stack.Screen name="ModeratorHome" component={ModeratorHomeScreen} />
+        <Stack.Screen name="ModeratorReview" component={ModeratorReviewScreen} />
+        <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+        <Stack.Screen name="PatientDetailsForm" component={PatientDetailsForm} />
+        <Stack.Screen name="ThreePhotoCapture" component={ThreePhotoCapture} />
+        <Stack.Screen name="ReportUpload" component={ReportUploadScreen} />
+        <Stack.Screen name="ClinicalNote" component={ClinicalNoteScreen} />
+        <Stack.Screen name="ReviewAndSubmit" component={ReviewAndSubmitScreen} />
+        <Stack.Screen name="SubmissionResult" component={SubmissionResultScreen} />
         <Stack.Screen
           name="PatientRegistration"
           component={PatientRegistrationScreen}

@@ -1,4 +1,4 @@
-package com.helloworld
+package com.iitkgp.diabetescareai
 
 import android.os.Bundle
 import com.facebook.react.ReactActivity

@@ -1,165 +1,170 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import * as Keychain from 'react-native-keychain';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RouteProp} from '@react-navigation/native';
-import ReactNativeBiometrics from 'react-native-biometrics';
-import type {RootStackParamList} from '../navigation/RootNavigator';
-import type {AppRole} from '../types/app';
+import type {AppRole, WorkerType} from '../types/app';
 import {
-  ensureDemoAshaAccounts,
-  getPatientSelfProfile,
-  loginAccount,
-  normalizePhone,
-  registerAccount,
-  setSession,
-} from '../storage/appStorage';
-import {
-  loginAshaWithServer,
-  loginWithServer,
-  registerWithServer,
+  getHomeRouteForRole,
+  getSavedLoginCredentials,
+  loginWithIdentifier,
+  registerUserV4,
 } from '../services/authService';
-import {isAshaTrainingComplete} from '../storage/ashaTrainingStorage';
-import {isPatientOnboardingComplete} from '../storage/onboardingStorage';
+import {initApiBaseUrl} from '../config/api';
+import {V4_COLORS} from '../theme/v4Theme';
 
 type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
-  route: RouteProp<RootStackParamList, 'Login'>;
+  navigation: NativeStackNavigationProp<any>;
+  route: RouteProp<any, 'Login'>;
 };
 
-const bioService = (role: AppRole) => `healthscreen_login_${role}`;
-const rnBiometrics = new ReactNativeBiometrics();
-
-const DEMO_ASHA_WORKER_ID = 'asha001';
-const DEMO_ASHA_PIN = '1234';
+const WORKER_TYPES: WorkerType[] = ['ASHA', 'ICDS', 'CHO'];
 
 export default function LoginScreen({navigation, route}: Props) {
-  const role: AppRole = route.params.role;
+  const rawRole = (route.params as any)?.role || 'doctor';
+  const role: AppRole =
+    rawRole === 'asha' ? 'field_worker' : (rawRole as AppRole);
+
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [phone, setPhone] = useState(role === 'asha' ? DEMO_ASHA_WORKER_ID : '');
-  const [pin, setPin] = useState(role === 'asha' ? DEMO_ASHA_PIN : '');
-  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Register fields
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [usernameOrWorkerId, setUsernameOrWorkerId] = useState('');
+  const [workerType, setWorkerType] = useState<WorkerType>('ASHA');
+  const [district, setDistrict] = useState('');
+  const [specialization, setSpecialization] = useState('');
   const [busy, setBusy] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
 
-  const title = useMemo(
-    () =>
-      role === 'asha'
-        ? 'ASHA worker sign-in'
-        : 'Patient sign-in',
-    [role],
-  );
-
-  const tryBiometricFill = useCallback(async () => {
-    const {available} = await rnBiometrics.isSensorAvailable();
-    if (!available) {
-      Alert.alert('Biometrics', 'No fingerprint or Face ID is available on this device.');
-      return;
-    }
-    const auth = await rnBiometrics.simplePrompt({promptMessage: 'Unlock HealthScreen'});
-    if (!auth.success) {
-      return;
-    }
-    try {
-      const creds = await Keychain.getGenericPassword({
-        service: bioService(role),
-        authenticationPrompt: {title: 'Load saved login'},
-      });
-      if (creds) {
-        setPhone(creds.username);
-        setPin(creds.password ?? '');
+  useEffect(() => {
+    initApiBaseUrl();
+    getSavedLoginCredentials(role).then(saved => {
+      if (saved) {
+        setHasSaved(true);
       }
-    } catch {
-      // User cancelled keychain or nothing stored.
-    }
+    });
   }, [role]);
 
+  const title = useMemo(() => {
+    switch (role) {
+      case 'doctor':
+        return mode === 'login' ? 'Doctor Sign In' : 'Doctor Registration';
+      case 'field_worker':
+        return mode === 'login'
+          ? 'Field Worker Sign In'
+          : 'Field Worker Registration';
+      case 'moderator':
+        return mode === 'login' ? 'Moderator Sign In' : 'Moderator Registration';
+      case 'admin':
+        return mode === 'login' ? 'Admin Sign In' : 'Admin Registration';
+    }
+  }, [role, mode]);
 
-  const submit = useCallback(async () => {
-    const p =
-      role === 'asha'
-        ? phone.trim().toLowerCase()
-        : normalizePhone(phone);
-    if (role === 'asha') {
-      if (p.length < 4 || pin.length < 4) {
-        Alert.alert('Check details', 'Enter worker ID and at least a 4-digit PIN.');
+  const loadSaved = useCallback(async () => {
+    const saved = await getSavedLoginCredentials(role);
+    if (!saved) {
+      Alert.alert('Saved Login', 'No saved credentials found for this role.');
+      return;
+    }
+    setIdentifier(saved.identifier);
+    setPassword(saved.password);
+  }, [role]);
+
+  const handleSubmit = useCallback(async () => {
+    if (mode === 'login') {
+      if (!identifier.trim() || !password) {
+        Alert.alert(
+          'Missing Details',
+          'Enter your email, phone, username, or worker ID and password.',
+        );
         return;
       }
-    } else if (p.length < 10 || pin.length < 4) {
-      Alert.alert('Check details', 'Enter a valid phone and at least 4-digit PIN.');
+      setBusy(true);
+      try {
+        const session = await loginWithIdentifier(identifier.trim(), password, role);
+        const target = getHomeRouteForRole(session.user.role);
+        navigation.replace(target);
+      } catch (e: any) {
+        Alert.alert('Sign In Failed', e?.message || 'Invalid credentials.');
+      } finally {
+        setBusy(false);
+      }
       return;
     }
-    if (mode === 'register' && name.trim().length < 2) {
-      Alert.alert('Name required', 'Enter your full name to create an account.');
+
+    if (fullName.trim().length < 2) {
+      Alert.alert('Full Name Required', 'Please enter your full name.');
       return;
     }
+    if (!email.trim() && !phone.trim() && !usernameOrWorkerId.trim()) {
+      Alert.alert(
+        'Identifier Required',
+        'Provide at least one of Email, Phone Number, or Username / Worker ID.',
+      );
+      return;
+    }
+    if (password.length < 4) {
+      Alert.alert('Password Too Short', 'Password must be at least 4 characters.');
+      return;
+    }
+
     setBusy(true);
     try {
-      if (mode === 'register') {
-        await registerAccount(role, p, pin, name.trim());
-        await registerWithServer(p, pin, name.trim(), role);
-      } else if (role === 'asha') {
-        await loginAshaWithServer(p, pin);
-      } else {
-        await loginWithServer(p, pin, role);
-      }
-      const session = await loginAccount(role, p, pin);
-      await setSession(session);
-
-      const {available} = await rnBiometrics.isSensorAvailable();
-      if (available) {
-        Alert.alert(
-          'Biometrics',
-          'Save this login for fingerprint / Face ID next time?',
-          [
-            {text: 'Not now', style: 'cancel'},
-            {
-              text: 'Save',
-              onPress: () =>
-                Keychain.setGenericPassword(p, pin, {
-                  service: bioService(role),
-                }),
-            },
-          ],
-        );
-      }
-
-      if (role === 'patient') {
-        const profile = await getPatientSelfProfile(session.phone);
-        if (!profile) {
-          navigation.replace('PatientRegistration', {flow: 'first_time'});
-          return;
-        }
-        if (!(await isPatientOnboardingComplete(session.phone))) {
-          navigation.replace('MedicalHistorySetup', {onboarding: true});
-          return;
-        }
-        navigation.replace('PatientHome');
-        return;
-      }
-
-      const trained = await isAshaTrainingComplete(session.phone);
-      navigation.replace(trained ? 'AshaHome' : 'AshaTrainingHome');
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong.';
-      Alert.alert('Could not continue', msg);
+      const session = await registerUserV4({
+        fullName: fullName.trim(),
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        username: usernameOrWorkerId.trim() || undefined,
+        workerId: usernameOrWorkerId.trim() || undefined,
+        password,
+        role,
+        workerType: role === 'field_worker' ? workerType : undefined,
+        district: role === 'field_worker' ? district.trim() || undefined : undefined,
+        specialization:
+          role === 'doctor' ? specialization.trim() || undefined : undefined,
+      });
+      const target = getHomeRouteForRole(session.user.role);
+      navigation.replace(target);
+    } catch (e: any) {
+      Alert.alert('Registration Failed', e?.message || 'Could not create account.');
     } finally {
       setBusy(false);
     }
-  }, [mode, name, navigation, phone, pin, role]);
+  }, [
+    mode,
+    identifier,
+    password,
+    role,
+    fullName,
+    email,
+    phone,
+    usernameOrWorkerId,
+    workerType,
+    district,
+    specialization,
+    navigation,
+  ]);
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={V4_COLORS.bg} />
       <KeyboardAvoidingView
         style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -168,17 +173,8 @@ export default function LoginScreen({navigation, route}: Props) {
           contentContainerStyle={styles.scroll}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.sub}>
-            {role === 'asha'
-              ? 'Use your worker ID and PIN. Demo login is pre-filled below.'
-              : 'Use your mobile number. Registration is one-time per device.'}
+            Sign in with your Email, Phone Number, Username, or Worker ID.
           </Text>
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={tryBiometricFill}
-            style={styles.bioBtn}>
-            <Text style={styles.bioBtnText}>Use fingerprint / Face ID</Text>
-          </TouchableOpacity>
 
           <View style={styles.segment}>
             <TouchableOpacity
@@ -205,69 +201,170 @@ export default function LoginScreen({navigation, route}: Props) {
             </TouchableOpacity>
           </View>
 
-          {mode === 'register' && (
+          {mode === 'login' && hasSaved && (
+            <TouchableOpacity style={styles.savedBtn} onPress={loadSaved}>
+              <Text style={styles.savedBtnText}>Fill Saved Login Credentials</Text>
+            </TouchableOpacity>
+          )}
+
+          {mode === 'register' ? (
+            <>
+              <View style={styles.field}>
+                <Text style={styles.label}>Full Name *</Text>
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Enter full name"
+                  placeholderTextColor="rgba(148,163,184,0.8)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Email (Optional)</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="name@hospital.in"
+                  placeholderTextColor="rgba(148,163,184,0.8)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Phone Number (Optional)</Text>
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  placeholder="10-digit mobile"
+                  placeholderTextColor="rgba(148,163,184,0.8)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Username / Worker ID</Text>
+                <TextInput
+                  value={usernameOrWorkerId}
+                  onChangeText={setUsernameOrWorkerId}
+                  autoCapitalize="none"
+                  placeholder="e.g. DOC_01 or asha001"
+                  placeholderTextColor="rgba(148,163,184,0.8)"
+                  style={styles.input}
+                />
+              </View>
+
+              {role === 'field_worker' && (
+                <>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Worker Type *</Text>
+                    <View style={styles.chipRow}>
+                      {WORKER_TYPES.map(wt => {
+                        const active = workerType === wt;
+                        return (
+                          <TouchableOpacity
+                            key={wt}
+                            style={[styles.chip, active && styles.chipActive]}
+                            onPress={() => setWorkerType(wt)}>
+                            <Text
+                              style={[
+                                styles.chipText,
+                                active && styles.chipTextActive,
+                              ]}>
+                              {wt}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>District</Text>
+                    <TextInput
+                      value={district}
+                      onChangeText={setDistrict}
+                      placeholder="e.g. Paschim Medinipur"
+                      placeholderTextColor="rgba(148,163,184,0.8)"
+                      style={styles.input}
+                    />
+                  </View>
+                </>
+              )}
+
+              {role === 'doctor' && (
+                <View style={styles.field}>
+                  <Text style={styles.label}>Specialization (Optional)</Text>
+                  <TextInput
+                    value={specialization}
+                    onChangeText={setSpecialization}
+                    placeholder="e.g. Diabetologist, Podiatric Surgeon"
+                    placeholderTextColor="rgba(148,163,184,0.8)"
+                    style={styles.input}
+                  />
+                </View>
+              )}
+            </>
+          ) : (
             <View style={styles.field}>
-              <Text style={styles.label}>Full name</Text>
+              <Text style={styles.label}>
+                Email / Phone / Username / Worker ID
+              </Text>
               <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="As on government ID"
-                placeholderTextColor="rgba(148,163,184,0.9)"
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+                placeholder="e.g. doctor@demo.in or asha001 or 9831000001"
+                placeholderTextColor="rgba(148,163,184,0.8)"
                 style={styles.input}
               />
             </View>
           )}
 
           <View style={styles.field}>
-            <Text style={styles.label}>
-              {role === 'asha' ? 'Worker ID' : 'Mobile number'}
-            </Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              autoCapitalize={role === 'asha' ? 'none' : 'none'}
-              keyboardType={role === 'asha' ? 'default' : 'phone-pad'}
-              placeholder={role === 'asha' ? 'e.g. asha001' : '10-digit mobile'}
-              placeholderTextColor="rgba(148,163,184,0.9)"
-              style={styles.input}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>PIN</Text>
-            <TextInput
-              value={pin}
-              onChangeText={setPin}
-              keyboardType="number-pad"
-              secureTextEntry
-              placeholder="Min 4 digits"
-              placeholderTextColor="rgba(148,163,184,0.9)"
-              style={styles.input}
-            />
+            <Text style={styles.label}>Password *</Text>
+            <View style={styles.passwordWrap}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholder="Enter password"
+                placeholderTextColor="rgba(148,163,184,0.8)"
+                style={[styles.input, {flex: 1, borderWidth: 0}]}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(v => !v)}
+                style={styles.eyeBtn}>
+                <Text style={styles.eyeText}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity
             activeOpacity={0.9}
             disabled={busy}
-            onPress={submit}
+            onPress={handleSubmit}
             style={[styles.primary, busy && styles.primaryDisabled]}>
-            <Text style={styles.primaryText}>
-              {busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Continue'}
-            </Text>
+            {busy ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryText}>
+                {mode === 'register' ? 'Create Account & Sign In' : 'Sign In'}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => navigation.replace('RoleSelect')}
             style={styles.link}>
-            <Text style={styles.linkText}>Choose different mode</Text>
+            <Text style={styles.linkText}>← Choose Different Role</Text>
           </TouchableOpacity>
-
-          <Text style={styles.demoNote}>
-            {role === 'asha'
-              ? `Demo ASHA (pre-filled): ${DEMO_ASHA_WORKER_ID} · PIN ${DEMO_ASHA_PIN}. Also: asha002 / ${DEMO_ASHA_PIN}. Works offline on this device; with Flask on :5001, same IDs use the server.`
-              : 'Demo: data stays on this device only (no cloud sync yet).'}
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -275,70 +372,91 @@ export default function LoginScreen({navigation, route}: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#0B1220'},
+  safe: {flex: 1, backgroundColor: V4_COLORS.bg},
   scroll: {padding: 22, paddingBottom: 40},
-  title: {fontSize: 26, fontWeight: '900', color: '#F8FAFC'},
+  title: {fontSize: 26, fontWeight: '900', color: V4_COLORS.text},
   sub: {
     marginTop: 8,
     fontSize: 14,
-    color: 'rgba(248,250,252,0.72)',
+    color: V4_COLORS.mutedText,
     lineHeight: 20,
-    marginBottom: 10,
+    marginBottom: 16,
   },
-  bioBtn: {
-    marginBottom: 14,
-    paddingVertical: 12,
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: V4_COLORS.card,
     borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: V4_COLORS.cardBorder,
+  },
+  segBtn: {flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 11},
+  segActive: {backgroundColor: V4_COLORS.primary},
+  segText: {color: V4_COLORS.mutedText, fontWeight: '800'},
+  segTextActive: {color: '#FFFFFF'},
+  savedBtn: {
+    marginBottom: 14,
+    paddingVertical: 11,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(59,130,246,0.45)',
     backgroundColor: 'rgba(37,99,235,0.12)',
     alignItems: 'center',
   },
-  bioBtnText: {color: '#93C5FD', fontWeight: '900', fontSize: 14},
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(15,23,42,0.6)',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.18)',
-  },
-  segBtn: {flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12},
-  segActive: {backgroundColor: 'rgba(37,99,235,0.35)'},
-  segText: {color: 'rgba(248,250,252,0.7)', fontWeight: '800'},
-  segTextActive: {color: '#F8FAFC'},
+  savedBtnText: {color: '#93C5FD', fontWeight: '800', fontSize: 13},
   field: {marginBottom: 12},
   label: {
-    color: 'rgba(248,250,252,0.72)',
+    color: V4_COLORS.mutedText,
     fontWeight: '700',
     marginBottom: 6,
     fontSize: 12,
   },
   input: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.22)',
+    borderColor: V4_COLORS.cardBorder,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#F8FAFC',
-    backgroundColor: 'rgba(15,23,42,0.55)',
+    color: V4_COLORS.text,
+    backgroundColor: V4_COLORS.inputBg,
+    fontSize: 15,
   },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: V4_COLORS.cardBorder,
+    backgroundColor: V4_COLORS.inputBg,
+  },
+  eyeBtn: {paddingHorizontal: 14, paddingVertical: 12},
+  eyeText: {color: '#93C5FD', fontWeight: '700', fontSize: 13},
+  chipRow: {flexDirection: 'row', gap: 10},
+  chip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: V4_COLORS.cardBorder,
+    backgroundColor: V4_COLORS.chipBg,
+    alignItems: 'center',
+  },
+  chipActive: {
+    backgroundColor: 'rgba(37, 99, 235, 0.25)',
+    borderColor: V4_COLORS.primary,
+  },
+  chipText: {color: V4_COLORS.mutedText, fontWeight: '800'},
+  chipTextActive: {color: '#FFFFFF'},
   primary: {
-    marginTop: 10,
-    backgroundColor: '#2563EB',
-    borderRadius: 16,
-    paddingVertical: 16,
+    marginTop: 14,
+    backgroundColor: V4_COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: 'center',
   },
   primaryDisabled: {opacity: 0.6},
-  primaryText: {color: '#F8FAFC', fontWeight: '900', fontSize: 16},
-  link: {marginTop: 16, alignItems: 'center'},
-  linkText: {color: '#93C5FD', fontWeight: '800'},
-  demoNote: {
-    marginTop: 22,
-    fontSize: 12,
-    color: 'rgba(148,163,184,0.85)',
-    lineHeight: 17,
-  },
+  primaryText: {color: '#FFFFFF', fontWeight: '900', fontSize: 16},
+  link: {marginTop: 18, alignItems: 'center'},
+  linkText: {color: '#93C5FD', fontWeight: '800', fontSize: 14},
 });

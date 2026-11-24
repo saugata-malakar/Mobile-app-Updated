@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   AppRole,
   AshaStats,
+  LegacyAppRole,
   PatientProfile,
   ScreeningRecord,
   Session,
@@ -101,7 +102,7 @@ export async function ensureDemoAshaAccounts() {
 }
 
 export async function registerAccount(
-  role: AppRole,
+  role: AppRole | LegacyAppRole,
   phone: string,
   pin: string,
   displayName: string,
@@ -117,7 +118,7 @@ export async function registerAccount(
 }
 
 export async function loginAccount(
-  role: AppRole,
+  role: AppRole | LegacyAppRole,
   phone: string,
   pin: string,
 ): Promise<Session> {
@@ -216,7 +217,7 @@ export async function getAshaStats(ashaPhone: string): Promise<AshaStats> {
 }
 
 export async function recordScreeningCompleted(args: {
-  mode: AppRole;
+  mode: AppRole | LegacyAppRole;
   patientId: string;
   patientName: string;
   conditionKey?: string;

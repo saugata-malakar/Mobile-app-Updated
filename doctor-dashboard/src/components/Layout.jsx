@@ -1,37 +1,51 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearAuth } from '../services/api';
+import { clearAuth, getStoredUser } from '../services/api';
 
 export default function Layout({ doctor, children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const currentRole = localStorage.getItem('user_role') || 'doctor';
+  const storedUser = getStoredUser();
+  const currentRole = (storedUser?.role || localStorage.getItem('user_role') || 'doctor').toLowerCase();
+  const workerType = storedUser?.worker_type || localStorage.getItem('worker_type') || '';
+  const displayName = storedUser?.full_name || storedUser?.name || doctor?.name;
 
   const logout = () => {
     clearAuth();
-    localStorage.removeItem('user_role');
     navigate('/login');
   };
 
-  // Dynamic Navigation per Role
-  let navItems = [];
+  let navItems;
   let roleTitle = 'Attending Physician';
   let roleBadge = 'Diabetology Lead';
 
-  if (currentRole === 'hospital_admin') {
-    roleTitle = 'Hospital Administration';
-    roleBadge = 'Statutory Oversight';
+  if (currentRole === 'admin' || currentRole === 'hospital_admin') {
+    roleTitle = 'System Administrator';
+    roleBadge = 'Full Platform Oversight';
     navItems = [
-      { to: '/admin-overview', label: 'Hospital Operations', icon: '🏥' },
-      { to: '/department', label: 'Department Triage', icon: '⚡' },
-      { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
-      { to: '/asha', label: 'ASHA Field Workforce', icon: '👩‍⚕️' },
-      { to: '/dpdp', label: 'DPDP Statutory Audit', icon: '🛡️' },
-      { to: '/analytics', label: 'Informatics & KPIs', icon: '📊' },
-      { to: '/settings', label: 'Hospital Settings', icon: '⚙️' },
+      { to: '/admin-overview', label: 'Admin Control Center', icon: '⚙️' },
+      { to: '/admin/users', label: 'User Management', icon: '👥' },
+      { to: '/admin/submissions', label: 'Submissions & Photos', icon: '🖼️' },
+      { to: '/admin/payments', label: 'Payments & ₹ Ledger', icon: '💰' },
+      { to: '/dpdp', label: 'DPDP Audit Logs', icon: '🛡️' },
+      { to: '/asha', label: 'Field Workforce Metrics', icon: '👩‍⚕️' },
+      { to: '/settings', label: 'Settings', icon: '🔧' },
+    ];
+  } else if (currentRole === 'moderator') {
+    roleTitle = 'QA Moderator';
+    roleBadge = '₹20 / Approved Record';
+    navItems = [
+      { to: '/moderator', label: 'Moderator Review Queue', icon: '🔍' },
+      { to: '/settings', label: 'Profile & Earnings', icon: '💰' },
+    ];
+  } else if (currentRole === 'field_worker') {
+    roleTitle = `${workerType || 'ASHA'} Field Collector`;
+    roleBadge = '₹50 / Accepted Record';
+    navItems = [
+      { to: '/field-collector', label: 'Data Collection Portal', icon: '📋' },
+      { to: '/settings', label: 'Profile & Earnings', icon: '💰' },
     ];
   } else if (currentRole === 'patient') {
     roleTitle = 'Ramesh Chandra Sen';
@@ -46,13 +60,14 @@ export default function Layout({ doctor, children }) {
   } else {
     // Doctor (default)
     navItems = [
-      { to: '/', label: 'Clinical Triage Queue', icon: '⚡' },
-      { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
+      { to: '/', label: 'Clinical Triage Hub', icon: '⚡' },
+      { to: '/doctor/collect', label: 'Submit Patient Record (₹80)', icon: '🩺' },
+      { to: '/doctor/validate-queue', label: 'Validate ASHA Queue (₹30)', icon: '✅' },
       { to: '/patients/PAT_KGP_01', label: 'Wound Trajectory & Overrides', icon: '🩹' },
       { to: '/teleconsults', label: 'National Teleconsult (eSanjeevani)', icon: '📹' },
+      { to: '/mobile-simulator', label: 'Mobile Field App Simulator', icon: '📱' },
       { to: '/department', label: 'Department Registry', icon: '🏥' },
       { to: '/analytics', label: 'Informatics & AI Models', icon: '📊' },
-      { to: '/asha', label: 'Field Health Workforce', icon: '👩‍⚕️' },
       { to: '/dpdp', label: 'DPDP Compliance Audit', icon: '🛡️' },
       { to: '/settings', label: 'Practitioner Settings', icon: '⚙️' },
     ];
@@ -67,7 +82,6 @@ export default function Layout({ doctor, children }) {
         } bg-[#0E1736] border-r border-[#1D2B52] transition-all duration-200 flex flex-col justify-between shrink-0 select-none z-20`}
       >
         <div>
-          {/* Institution Brand */}
           <div className="p-4 border-b border-[#1D2B52] flex items-center justify-between">
             {!collapsed ? (
               <div>
@@ -90,7 +104,6 @@ export default function Layout({ doctor, children }) {
             </button>
           </div>
 
-          {/* Navigation Links */}
           <nav className="p-2 space-y-1">
             {navItems.map((item) => {
               const active = location.pathname === item.to;
@@ -118,8 +131,10 @@ export default function Layout({ doctor, children }) {
           {!collapsed ? (
             <div>
               <div className="mb-2.5">
-                <p className="text-xs font-bold text-white truncate">{doctor?.name || roleTitle}</p>
-                <p className="text-[10px] text-slate-400 truncate">{doctor?.specialisation || roleBadge}</p>
+                <p className="text-xs font-bold text-white truncate">{displayName || roleTitle}</p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {storedUser?.specialization || roleBadge}
+                </p>
               </div>
               <button
                 type="button"
@@ -144,7 +159,6 @@ export default function Layout({ doctor, children }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
         <header className="h-14 bg-[#0E1736] border-b border-[#1D2B52] px-6 flex items-center justify-between shrink-0 select-none">
           <div className="flex items-center gap-3">
             <span className="px-2.5 py-1 rounded bg-[#16254A] border border-[#253966] text-blue-300 text-xs font-semibold">
@@ -152,25 +166,34 @@ export default function Layout({ doctor, children }) {
             </span>
             <span className="text-slate-500 text-xs hidden sm:inline">|</span>
             <span className="text-slate-400 text-xs hidden sm:inline">
-              Midnapore Apex Hub · Node #01
+              Midnapore Apex Hub · {displayName || 'Active Session'}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Link
-              to="/mobile-simulator"
-              className="px-3 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 font-bold text-xs flex items-center gap-1.5 transition-colors"
-            >
-              <span>📱</span> Launch Mobile Simulator
-            </Link>
+          <div className="flex items-center gap-3">
+            {currentRole === 'doctor' && (
+              <Link
+                to="/doctor/collect"
+                className="px-3 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/35 text-blue-300 border border-blue-600/50 font-bold text-xs flex items-center gap-1.5 transition-colors"
+              >
+                <span>🩺</span> Submit Record (₹80)
+              </Link>
+            )}
+            {(currentRole === 'admin' || currentRole === 'hospital_admin') && (
+              <Link
+                to="/admin/submissions"
+                className="px-3 py-1 rounded-lg bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border border-amber-600/50 font-bold text-xs flex items-center gap-1.5 transition-colors"
+              >
+                <span>🖼️</span> Inspect Submissions
+              </Link>
+            )}
             <div className="flex items-center gap-2 text-xs text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>FastAPI Port 8000</span>
+              <span className="hidden md:inline">FastAPI Connected</span>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#0B132B]">
           {children}
         </main>

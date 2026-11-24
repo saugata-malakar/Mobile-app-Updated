@@ -578,22 +578,7 @@ def health() -> dict:
     }
 
 
-# ── Authentication Endpoints ─────────────────────────────────────────────────
-
-@app.post("/api/v1/auth/login")
-@app.post("/api/v1/auth/doctor/login")
-def doctor_login(payload: DoctorLoginPayload):
-    return {
-        "status": "success",
-        "data": {
-            "token": "jwt_token_doctor_demo_secret_key_12345",
-            "refresh_token": "refresh_token_doctor_demo_secret_key_12345",
-            "role": "doctor",
-            "doctor_id": "DOC_IITKGP_01",
-            "name": "Dr. Clinical Specialist",
-            "email": payload.email,
-        }
-    }
+# ── Authentication Endpoints (delegated to workflow_routes) ───────────────────
 
 @app.post("/api/v1/auth/refresh")
 def auth_refresh():
@@ -1857,6 +1842,22 @@ def get_progression(patient_id: str):
         "recommendation": "Maintain standard dressing and glycemic monitoring.",
     }
 
+
+# ── DiabetesCare AI v4.0 4-Role Workflow Router ───────────────────────────────
+try:
+    from .workflow_routes import create_workflow_router
+except ImportError:
+    from backend.api.workflow_routes import create_workflow_router
+
+_workflow_router = create_workflow_router(
+    get_target_databases=lambda: _get_target_databases(),
+    stored_photos_dir=STORED_PHOTOS_DIR,
+    patients_db=_PATIENTS_DB,
+    alerts_db=_ALERTS_DB,
+    audit_logs_db=_AUDIT_LOGS_DB,
+    get_ml_wound_model=lambda: get_ml_wound_model(),
+)
+app.include_router(_workflow_router)
 
 # ── Mount Frontend Static Build ──────────────────────────────────────────────
 DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "doctor-dashboard", "dist")

@@ -1,110 +1,278 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doctorLogin, persistAuth } from '../services/api';
+import { loginUser, persistUserSession, registerUser } from '../services/api';
 
 const ROLES = [
   {
     id: 'doctor',
-    title: 'Attending Physician',
-    subtitle: 'Wound Decision Support & Telehealth',
+    title: 'Doctor',
+    subtitle: 'Direct collection (₹80) & ASHA validation (₹30)',
     icon: '🩺',
     badge: 'Clinical Portal',
-    email: 'doctor@demo.in',
-    password: 'doctor123',
-    accent: 'from-blue-600 to-indigo-700',
-    border: 'border-blue-500/40',
+    demoIdentifier: 'doctor@demo.in',
+    demoPassword: 'doctor123',
+    demoLabel: 'Doctor Demo',
+    border: 'border-blue-500/60',
+    route: '/',
   },
   {
-    id: 'hospital_admin',
-    title: 'Hospital Authority',
-    subtitle: 'Workforce & Statutory DPDP Audit',
-    icon: '🏥',
-    badge: 'Administrative Portal',
-    email: 'admin@hospital.in',
-    password: 'admin123',
-    accent: 'from-slate-700 to-slate-800',
-    border: 'border-slate-500/40',
+    id: 'field_worker',
+    title: 'ASHA / ICDS / CHO',
+    subtitle: 'Field data collection & 3-photo upload (₹50)',
+    icon: '📋',
+    badge: 'Field Collector',
+    demoIdentifier: 'asha@demo.in',
+    demoPassword: 'asha123',
+    demoLabel: 'ASHA Demo',
+    border: 'border-teal-500/60',
+    route: '/field-collector',
   },
   {
-    id: 'patient',
-    title: 'Patient / Guardian',
-    subtitle: 'Healing Journey & Govt Teleconsult',
-    icon: '👤',
-    badge: 'Patient Portal',
-    email: 'patient@demo.in',
-    password: 'patient123',
-    accent: 'from-sky-600 to-blue-700',
-    border: 'border-sky-500/40',
+    id: 'moderator',
+    title: 'Moderator',
+    subtitle: 'Verify ASHA submissions & photos (₹20)',
+    icon: '🔍',
+    badge: 'QA Review Portal',
+    demoIdentifier: 'moderator@demo.in',
+    demoPassword: 'mod123',
+    demoLabel: 'Moderator Demo',
+    border: 'border-violet-500/60',
+    route: '/moderator',
+  },
+  {
+    id: 'admin',
+    title: 'Admin',
+    subtitle: 'Full system, users, overrides & ₹ payouts',
+    icon: '⚙️',
+    badge: 'Admin Control',
+    demoIdentifier: 'admin@hospital.in',
+    demoPassword: 'admin123',
+    demoLabel: 'Admin Demo',
+    border: 'border-amber-500/60',
+    route: '/admin-overview',
   },
 ];
 
+const QUICK_DEMOS = [
+  { label: '🩺 Doctor', role: 'doctor', identifier: 'doctor@demo.in', password: 'doctor123', name: 'Dr. Clinical Specialist' },
+  { label: '📋 ASHA', role: 'field_worker', worker_type: 'ASHA', identifier: 'asha@demo.in', password: 'asha123', name: 'Manasi Roy (ASHA)' },
+  { label: '📋 ICDS', role: 'field_worker', worker_type: 'ICDS', identifier: 'icds@demo.in', password: 'icds123', name: 'ICDS Worker Demo' },
+  { label: '📋 CHO', role: 'field_worker', worker_type: 'CHO', identifier: 'cho@demo.in', password: 'cho123', name: 'CHO Officer Demo' },
+  { label: '🔍 Moderator', role: 'moderator', identifier: 'moderator@demo.in', password: 'mod123', name: 'QA Moderator' },
+  { label: '⚙️ Admin', role: 'admin', identifier: 'admin@hospital.in', password: 'admin123', name: 'System Admin' },
+];
+
+function routeForRole(role) {
+  switch (String(role || '').toLowerCase()) {
+    case 'admin':
+    case 'hospital_admin':
+      return '/admin-overview';
+    case 'moderator':
+      return '/moderator';
+    case 'field_worker':
+      return '/field-collector';
+    case 'patient':
+      return '/patient-portal';
+    default:
+      return '/';
+  }
+}
+
 export default function DoctorLogin() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [selectedRole, setSelectedRole] = useState(ROLES[0]);
-  const [email, setEmail] = useState(ROLES[0].email);
-  const [password, setPassword] = useState(ROLES[0].password);
+
+  // Login form state
+  const [identifier, setIdentifier] = useState(ROLES[0].demoIdentifier);
+  const [password, setPassword] = useState(ROLES[0].demoPassword);
+
+  // Register form state
+  const [fullName, setFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [workerType, setWorkerType] = useState('ASHA');
+  const [district, setDistrict] = useState('Paschim Medinipur');
+  const [specialization, setSpecialization] = useState('Diabetology & Vascular Wound Care');
+
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    setEmail(role.email);
-    setPassword(role.password);
+    setErrorMsg('');
+    if (mode === 'login') {
+      setIdentifier(role.demoIdentifier);
+      setPassword(role.demoPassword);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const performLogin = async (loginId, loginPass, roleHint, fallbackDemo = null) => {
     setLoading(true);
+    setErrorMsg('');
     try {
-      localStorage.setItem('user_role', selectedRole.id);
-
-      if (selectedRole.id === 'doctor' || selectedRole.id === 'hospital_admin') {
-        try {
-          await doctorLogin(email.trim(), password);
-        } catch {
-          persistAuth('demo_token_authenticated', 'demo_refresh_token');
-        }
+      const data = await loginUser(loginId, loginPass, roleHint);
+      const effectiveRole = data?.user?.role || data?.role || roleHint;
+      navigate(routeForRole(effectiveRole));
+    } catch (err) {
+      if (!err?.response && fallbackDemo) {
+        // Offline / static preview fallback for quick demos
+        persistUserSession({
+          user_id: `${fallbackDemo.role.toUpperCase()}_DEMO_01`,
+          role: fallbackDemo.role,
+          full_name: fallbackDemo.name,
+          worker_type: fallbackDemo.worker_type || '',
+          email: fallbackDemo.identifier,
+          token: 'demo_token_authenticated',
+          refresh_token: 'demo_refresh_token',
+        });
+        navigate(routeForRole(fallbackDemo.role));
       } else {
-        persistAuth('demo_token_patient', 'demo_refresh_token');
-      }
-
-      if (selectedRole.id === 'patient') {
-        navigate('/patient-portal');
-      } else if (selectedRole.id === 'hospital_admin') {
-        navigate('/admin-overview');
-      } else {
-        navigate('/');
+        const msg =
+          err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Authentication failed. Please check your credentials.';
+        setErrorMsg(typeof msg === 'string' ? msg : JSON.stringify(msg));
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (!identifier.trim() || !password) {
+      setErrorMsg('Please enter your Email / Phone / Username / Worker ID and password.');
+      return;
+    }
+    await performLogin(identifier.trim(), password, selectedRole.id, {
+      role: selectedRole.id,
+      identifier: identifier.trim(),
+      name: selectedRole.title,
+    });
+  };
+
+  const handleQuickDemo = async (demo) => {
+    const roleObj = ROLES.find((r) => r.id === demo.role) || ROLES[0];
+    setSelectedRole(roleObj);
+    setMode('login');
+    setIdentifier(demo.identifier);
+    setPassword(demo.password);
+    await performLogin(demo.identifier, demo.password, demo.role, demo);
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!fullName.trim() || !regPassword) {
+      setErrorMsg('Full Name and Password are required.');
+      return;
+    }
+    if (!regEmail.trim() && !regPhone.trim() && !regUsername.trim()) {
+      setErrorMsg('Please provide at least one of Email, Phone Number, or Username / Worker ID.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = {
+        full_name: fullName.trim(),
+        email: regEmail.trim() || undefined,
+        phone: regPhone.trim() || undefined,
+        username: regUsername.trim() || undefined,
+        worker_id: regUsername.trim() || undefined,
+        password: regPassword,
+        role: selectedRole.id,
+        worker_type: selectedRole.id === 'field_worker' ? workerType : undefined,
+        district: selectedRole.id === 'field_worker' ? district.trim() : undefined,
+        specialization: selectedRole.id === 'doctor' ? specialization.trim() : undefined,
+      };
+      const data = await registerUser(payload);
+      const effectiveRole = data?.user?.role || data?.role || selectedRole.id;
+      navigate(routeForRole(effectiveRole));
+    } catch (err) {
+      const msg =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Registration failed. Please check your details.';
+      setErrorMsg(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePatientDemo = () => {
+    persistUserSession({
+      user_id: 'PAT_KGP_01',
+      role: 'patient',
+      full_name: 'Ramesh Chandra Sen',
+      email: 'patient@demo.in',
+      token: 'demo_token_patient',
+      refresh_token: 'demo_refresh_token',
+    });
+    navigate('/patient-portal');
+  };
+
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-[#0B132B] p-4 sm:p-6 select-none font-sans">
-      <div className="w-full max-w-3xl relative z-10">
-        
+    <div className="min-h-screen relative flex items-center justify-center bg-[#0B132B] p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-4xl relative z-10">
         {/* Institutional Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-900/30 border border-blue-700/40 text-blue-300 text-xs font-semibold tracking-wider uppercase mb-3">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-900/30 border border-blue-700/40 text-blue-300 text-xs font-semibold tracking-wider uppercase mb-2.5">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            National Health Authority · ABDM Compliant System
+            National Health Authority · ABDM & DPDP Act 2023 Compliant
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            DiabetesCare AI — Unified Hospital Portal
+            DiabetesCare AI — Unified Clinical & Field Portal
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-md mx-auto">
-            Authorized Gateway for Attending Clinicians, Hospital Administration & Patients
+          <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl mx-auto">
+            Single workstation for Doctors, ASHA / ICDS / CHO Field Collectors, QA Moderators, and Hospital Administrators
           </p>
         </div>
 
-        {/* Form Container */}
-        <div className="bg-[#111C38] border border-[#23355E] rounded-2xl p-6 sm:p-10 shadow-2xl">
-          
-          <div className="mb-6">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-              Select Your Portal Role (Click any card to auto-fill)
+        {/* Main Card */}
+        <div className="bg-[#111C38] border border-[#23355E] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+          {/* Sign In / Register Tabs */}
+          <div className="flex items-center justify-between flex-wrap gap-3 border-b border-[#1E2E54] pb-4">
+            <div className="inline-flex rounded-xl bg-[#0B132B] p-1 border border-[#23355E]">
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setErrorMsg(''); }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+                  mode === 'login' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode('register'); setErrorMsg(''); }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+                  mode === 'register' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Register New Account
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handlePatientDemo}
+              className="px-3 py-1.5 rounded-lg bg-[#0E1736] hover:bg-[#1A284D] border border-[#253966] text-sky-300 text-[11px] font-semibold transition-colors"
+            >
+              👤 Patient Portal Demo →
+            </button>
+          </div>
+
+          {/* 4 Role Cards */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+              1. Select Your Role
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {ROLES.map((role) => {
                 const isSelected = selectedRole.id === role.id;
                 return (
@@ -114,14 +282,14 @@ export default function DoctorLogin() {
                     onClick={() => handleRoleSelect(role)}
                     className={`text-left p-3.5 rounded-xl transition-all border flex flex-col justify-between ${
                       isSelected
-                        ? `bg-[#1A2C56] ${role.border} shadow-md`
+                        ? `bg-[#1A2C56] ${role.border} shadow-md ring-1 ring-blue-500/40`
                         : 'bg-[#142142] border-[#22335A] hover:bg-[#1A2C56]/70'
                     }`}
                   >
                     <div>
                       <span className="text-xl mb-1.5 block">{role.icon}</span>
                       <h3 className="text-xs font-bold text-white">{role.title}</h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{role.subtitle}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{role.subtitle}</p>
                     </div>
                     <span className="inline-block mt-2.5 px-2 py-0.5 rounded text-[9px] font-semibold bg-[#23355E] text-slate-200 w-fit">
                       {role.badge}
@@ -132,58 +300,205 @@ export default function DoctorLogin() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Staff Email / Registered Mobile
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="physician@hospital.in"
-                required
-                className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs font-medium"
-              />
+          {errorMsg && (
+            <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-700/60 text-rose-200 text-xs font-semibold">
+              ⚠ {errorMsg}
             </div>
+          )}
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Access Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs font-medium"
-              />
+          {mode === 'login' ? (
+            <div className="space-y-5">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Email, Phone, Username, or Worker ID
+                    </label>
+                    <input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="e.g. doctor@demo.in, 9831000002, ASHA_WB_0042"
+                      required
+                      className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Access Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs font-medium"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wider disabled:opacity-50 shadow"
+                >
+                  {loading ? 'Authenticating…' : `Sign In as ${selectedRole.title}`}
+                </button>
+              </form>
+
+              {/* 1-Click Quick Login Buttons */}
+              <div className="pt-4 border-t border-[#1C2C52]">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                  1-Click Quick Demo Login (All 4 Roles & Field Subtypes)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_DEMOS.map((demo) => (
+                    <button
+                      key={demo.identifier}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => handleQuickDemo(demo)}
+                      className="px-3 py-1.5 rounded-lg bg-[#0C152E] hover:bg-[#192952] border border-[#253966] text-slate-200 text-xs font-semibold transition-colors disabled:opacity-50"
+                    >
+                      {demo.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+          ) : (
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Dr. Anirban Sen / Manasi Roy"
+                    required
+                    className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wider disabled:opacity-50 mt-2 shadow"
-            >
-              {loading ? 'Authenticating…' : `Enter ${selectedRole.title}`}
-            </button>
-          </form>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Username / Worker ID
+                  </label>
+                  <input
+                    type="text"
+                    value={regUsername}
+                    onChange={(e) => setRegUsername(e.target.value)}
+                    placeholder="e.g. ASHA_WB_0105 or dr_anirban"
+                    className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                  />
+                </div>
 
-          <div className="mt-6 pt-4 border-t border-[#1C2C52] flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              Live Authentication Gateway Active
-            </span>
-            <span className="text-slate-400 font-mono">
-              Auto-filled: {email} / {password}
-            </span>
-          </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="name@hospital.in"
+                    className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    placeholder="+91 98310 XXXXX"
+                    className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                  />
+                </div>
+
+                {selectedRole.id === 'field_worker' && (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Field Worker Type *
+                      </label>
+                      <select
+                        value={workerType}
+                        onChange={(e) => setWorkerType(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                      >
+                        <option value="ASHA">ASHA (Accredited Social Health Activist)</option>
+                        <option value="ICDS">ICDS (Anganwadi / Child Development)</option>
+                        <option value="CHO">CHO (Community Health Officer)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                        District / Block
+                      </label>
+                      <input
+                        type="text"
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
+                        placeholder="e.g. Paschim Medinipur"
+                        className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedRole.id === 'doctor' && (
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Clinical Specialization
+                    </label>
+                    <input
+                      type="text"
+                      value={specialization}
+                      onChange={(e) => setSpecialization(e.target.value)}
+                      placeholder="e.g. Diabetology & Podiatric Wound Care"
+                      className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                    />
+                  </div>
+                )}
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Create Password *
+                  </label>
+                  <input
+                    type="password"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="Minimum 4 characters"
+                    required
+                    className="w-full px-3.5 py-2.5 bg-[#0C152E] border border-[#253966] text-white rounded-lg placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors text-xs uppercase tracking-wider disabled:opacity-50 shadow"
+              >
+                {loading ? 'Creating Account…' : `Register & Enter ${selectedRole.title} Portal`}
+              </button>
+            </form>
+          )}
         </div>
 
-        <div className="mt-6 text-center text-slate-500 text-[11px] space-y-0.5">
+        <div className="mt-5 text-center text-slate-500 text-[11px] space-y-0.5">
           <p>Indian Institute of Technology Kharagpur · Center for Healthcare Informatics</p>
-          <p>National Teleconsultation Network & DPDP Act 2023 Statutory Standard</p>
+          <p>Midnapore Medical College & Hospital · DPDP Act 2023 Statutory Standard</p>
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import {NativeModules, Platform} from 'react-native';
+import RNFS from 'react-native-fs';
 
-/**
- * In __DEV__, point the API at the same host that serves the JS bundle (Metro).
- * - Android emulator bundle is often @10.0.2.2:8081 → API @10.0.2.2:8000
- * - Physical device on Wi‑Fi uses the machine’s LAN IP from Metro → Flask must listen on 0.0.0.0:8000
- * - With `adb reverse tcp:8000 tcp:8000`, you can instead set port to match reverse (host still from Metro URL)
- */
+export const DEFAULT_LAN_URL = 'http://192.168.31.94:8000';
+export const DEFAULT_EMULATOR_URL = 'http://10.0.2.2:8000';
+export const DEFAULT_LOCALHOST_URL = 'http://localhost:8000';
+
+const SERVER_URL_FILE = `${RNFS.DocumentDirectoryPath}/diabetescare_server_url.txt`;
+
 function resolveDevApiBaseUrl(): string {
   const scriptURL = NativeModules?.SourceCode?.scriptURL as string | undefined;
   if (scriptURL) {
@@ -13,26 +14,82 @@ function resolveDevApiBaseUrl(): string {
     if (m?.[1]) {
       const host = m[1];
       if (Platform.OS === 'ios' && (host === 'localhost' || host === '127.0.0.1')) {
-        return 'http://localhost:8000';
+        return DEFAULT_LOCALHOST_URL;
       }
-      // Android emulator often loads the bundle as http://localhost:8081 (adb reverse).
-      // localhost inside the emulator is not the host machine — use the emulator→host alias.
       if (
         Platform.OS === 'android' &&
         (host === 'localhost' || host === '127.0.0.1')
       ) {
-        return 'http://10.0.2.2:8000';
+        return DEFAULT_EMULATOR_URL;
       }
       return `http://${host}:8000`;
     }
   }
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';
+    return DEFAULT_EMULATOR_URL;
   }
-  return 'http://localhost:8000';
+  return DEFAULT_LAN_URL;
 }
 
-/** Flask API base (Android emulator → host via Metro-derived IP when possible). */
-export const API_BASE_URL = __DEV__
-  ? resolveDevApiBaseUrl()
-  : 'https://api.diabetescareai.in';
+const initialDefaultUrl =
+  typeof __DEV__ !== 'undefined' && __DEV__
+    ? resolveDevApiBaseUrl()
+    : DEFAULT_LAN_URL;
+
+let customApiBaseUrl: string | null = null;
+
+export function normalizeBaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return initialDefaultUrl;
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return `http://${trimmed}`;
+  }
+  return trimmed;
+}
+
+export function getApiBaseUrl(): string {
+  return customApiBaseUrl || initialDefaultUrl;
+}
+
+export async function initApiBaseUrl(): Promise<string> {
+  try {
+    const exists = await RNFS.exists(SERVER_URL_FILE);
+    if (exists) {
+      const saved = await RNFS.readFile(SERVER_URL_FILE, 'utf8');
+      if (saved && saved.trim()) {
+        customApiBaseUrl = normalizeBaseUrl(saved);
+      }
+    }
+  } catch {
+    // fallback to detected URL
+  }
+  return getApiBaseUrl();
+}
+
+export async function setApiBaseUrl(url: string): Promise<string> {
+  const normalized = normalizeBaseUrl(url);
+  customApiBaseUrl = normalized;
+  try {
+    await RNFS.writeFile(SERVER_URL_FILE, normalized, 'utf8');
+  } catch {
+    // keep in memory even if disk write fails
+  }
+  return normalized;
+}
+
+export async function resetApiBaseUrl(): Promise<string> {
+  customApiBaseUrl = null;
+  try {
+    const exists = await RNFS.exists(SERVER_URL_FILE);
+    if (exists) {
+      await RNFS.unlink(SERVER_URL_FILE);
+    }
+  } catch {
+    // ignore
+  }
+  return getApiBaseUrl();
+}
+
+export const API_BASE_URL = initialDefaultUrl;
