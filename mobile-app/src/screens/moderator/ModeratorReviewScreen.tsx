@@ -149,7 +149,11 @@ export default function ModeratorReviewScreen({navigation, route}: Props) {
           )}
           {sub.ai_quality_score != null && (
             <Text style={styles.aiScore}>
-              AI Quality Score: {Math.round(Number(sub.ai_quality_score))}%
+              AI Quality Score:{' '}
+              {Number(sub.ai_quality_score) <= 1
+                ? Math.round(Number(sub.ai_quality_score) * 100)
+                : Math.round(Number(sub.ai_quality_score))}
+              %
             </Text>
           )}
         </View>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -114,7 +114,19 @@ export default function DoctorDashboard() {
             Active patient cohort registry, multi-visit wound area reduction tracking, and urgent clinical escalation queue.
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Link
+            to="/doctor/collect"
+            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow flex items-center gap-1.5"
+          >
+            <span>➕</span> Submit Record (₹80)
+          </Link>
+          <Link
+            to="/doctor/validate-queue"
+            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors shadow flex items-center gap-1.5"
+          >
+            <span>🩺</span> Validate ASHA (₹30)
+          </Link>
           <Link
             to="/teleconsults"
             className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-colors shadow flex items-center gap-1.5"
