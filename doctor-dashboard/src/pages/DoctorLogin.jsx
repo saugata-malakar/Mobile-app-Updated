@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, persistUserSession, registerUser } from '../services/api';
+import {
+  autoDetectBackend,
+  getApiBaseUrl,
+  loginUser,
+  persistUserSession,
+  pingBackendHealth,
+  registerUser,
+  setApiBaseUrl,
+} from '../services/api';
 
 const ROLES = [
   {
@@ -99,6 +107,28 @@ export default function DoctorLogin() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [backendStatus, setBackendStatus] = useState({ checked: false, connected: false, url: getApiBaseUrl() });
+  const [showServerConfig, setShowServerConfig] = useState(false);
+  const [serverInput, setServerInput] = useState(getApiBaseUrl() || 'http://localhost:8000');
+
+  useEffect(() => {
+    let cancelled = false;
+    autoDetectBackend().then((res) => {
+      if (!cancelled) {
+        setBackendStatus({ checked: true, connected: res.connected, url: res.url });
+        if (res.url && !getApiBaseUrl()) setServerInput(res.url);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSaveServerUrl = async (urlVal) => {
+    const clean = setApiBaseUrl(urlVal);
+    setServerInput(clean || 'http://localhost:8000');
+    const ok = await pingBackendHealth(clean);
+    setBackendStatus({ checked: true, connected: ok, url: clean || window.location.origin });
+    if (ok) setShowServerConfig(false);
+  };
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
@@ -235,6 +265,65 @@ export default function DoctorLogin() {
 
         {/* Main Card */}
         <div className="bg-[#111C38] border border-[#23355E] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+          {/* Backend Connection Banner */}
+          <div className="rounded-xl bg-[#0B132B] border border-[#23355E] p-3 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    !backendStatus.checked
+                      ? 'bg-slate-400 animate-pulse'
+                      : backendStatus.connected
+                      ? 'bg-emerald-400'
+                      : 'bg-amber-400'
+                  }`}
+                />
+                {backendStatus.connected ? (
+                  <span className="text-emerald-300 font-semibold">
+                    FastAPI Backend Connected ({backendStatus.url || 'Same Origin'})
+                  </span>
+                ) : (
+                  <span className="text-amber-300 font-semibold">
+                    Static Cloud Mode (Browser Storage active — works without 405!) · Connect FastAPI (:8000) for multi-device sync
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowServerConfig((v) => !v)}
+                className="px-2.5 py-1 rounded bg-[#162347] hover:bg-[#1E2F5E] border border-[#2A3F75] text-blue-300 text-[11px] font-bold"
+              >
+                {showServerConfig ? 'Hide Server Config' : 'Configure Backend URL'}
+              </button>
+            </div>
+
+            {showServerConfig && (
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1D2B52]">
+                <input
+                  type="text"
+                  value={serverInput}
+                  onChange={(e) => setServerInput(e.target.value)}
+                  placeholder="http://localhost:8000 or https://your-api.onrender.com"
+                  className="flex-1 min-w-[220px] px-3 py-1.5 rounded-lg bg-[#111C38] border border-[#253966] text-xs text-white font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSaveServerUrl(serverInput)}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold"
+                >
+                  Connect & Test
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveServerUrl('')}
+                  className="px-3 py-1.5 rounded-lg bg-[#162347] hover:bg-[#1E2F5E] text-slate-300 text-xs font-semibold border border-[#253966]"
+                >
+                  Reset / Auto
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Sign In / Register Tabs */}
           <div className="flex items-center justify-between flex-wrap gap-3 border-b border-[#1E2E54] pb-4">
             <div className="inline-flex rounded-xl bg-[#0B132B] p-1 border border-[#23355E]">

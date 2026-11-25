@@ -1,10 +1,51 @@
 import axios from 'axios';
+import {
+  sandboxAdminMarkPaid,
+  sandboxAdminOverride,
+  sandboxAdminPayments,
+  sandboxAdminStats,
+  sandboxAdminSubmissions,
+  sandboxAdminUpdateUser,
+  sandboxAdminUsers,
+  sandboxCreateSubmission,
+  sandboxDoctorQueue,
+  sandboxDoctorValidate,
+  sandboxGetRates,
+  sandboxGetSubmission,
+  sandboxLogin,
+  sandboxModeratorApprove,
+  sandboxModeratorQueue,
+  sandboxModeratorReject,
+  sandboxMyPayments,
+  sandboxMySubmissions,
+  sandboxRegister,
+  sandboxSaveClinicalNote,
+  sandboxSubmitRecord,
+  sandboxUpdateRates,
+  sandboxUploadPhoto,
+  sandboxUploadReport,
+} from './cloudSandbox';
 
 const TOKEN_KEY = 'doctor_dashboard_token';
 const REFRESH_KEY = 'doctor_dashboard_refresh';
 const USER_PROFILE_KEY = 'user_profile';
+const API_URL_STORAGE_KEY = 'dc_api_base_url';
+const SANDBOX_FLAG_KEY = 'dc_sandbox_active';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+function readInitialApiBaseUrl() {
+  try {
+    const saved = localStorage.getItem(API_URL_STORAGE_KEY);
+    if (saved !== null && saved.trim() !== '') {
+      return saved.trim().replace(/\/+$/, '');
+    }
+  } catch {
+    // ignore storage access issues
+  }
+  const envUrl = import.meta.env.VITE_API_BASE_URL || '';
+  return String(envUrl).trim().replace(/\/+$/, '');
+}
+
+export let API_BASE_URL = readInitialApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,13 +53,108 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+export function getApiBaseUrl() {
+  return API_BASE_URL;
+}
+
+export function setApiBaseUrl(url) {
+  const clean = String(url || '').trim().replace(/\/+$/, '');
+  API_BASE_URL = clean;
+  api.defaults.baseURL = clean;
+  try {
+    if (clean) {
+      localStorage.setItem(API_URL_STORAGE_KEY, clean);
+    } else {
+      localStorage.removeItem(API_URL_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  return clean;
+}
+
+export function isSandboxMode() {
+  try {
+    return localStorage.getItem(SANDBOX_FLAG_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setSandboxFlag(enabled) {
+  try {
+    if (enabled) localStorage.setItem(SANDBOX_FLAG_KEY, '1');
+    else localStorage.removeItem(SANDBOX_FLAG_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export async function pingBackendHealth(candidateUrl) {
+  const target = (candidateUrl !== undefined ? candidateUrl : API_BASE_URL).replace(/\/+$/, '');
+  try {
+    const res = await axios.get(`${target}/health`, { timeout: 3000 });
+    const ok = res?.status === 200 && res?.data && typeof res.data === 'object' && 'status' in res.data;
+    if (ok) setSandboxFlag(false);
+    return Boolean(ok);
+  } catch {
+    return false;
+  }
+}
+
+export async function autoDetectBackend() {
+  if (await pingBackendHealth(API_BASE_URL)) {
+    return { connected: true, url: API_BASE_URL || window.location.origin };
+  }
+  // When opened on static hosting (e.g. Vercel), try local FastAPI server automatically
+  if (!API_BASE_URL && typeof window !== 'undefined' && window.location.port !== '8000') {
+    if (await pingBackendHealth('http://localhost:8000')) {
+      setApiBaseUrl('http://localhost:8000');
+      setSandboxFlag(false);
+      return { connected: true, url: 'http://localhost:8000' };
+    }
+  }
+  return { connected: false, url: API_BASE_URL };
+}
+
 api.interceptors.request.use((config) => {
+  config.baseURL = API_BASE_URL;
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+function shouldUseSandboxFallback(err) {
+  if (!err) return false;
+  if (!err.response) return true; // Network error / unreachable backend
+  const st = err.response.status;
+  if (st === 405 || st === 502 || st === 503 || st === 504) return true;
+  if (st === 404 && typeof err.response.data === 'string' && err.response.data.toLowerCase().includes('<html')) {
+    return true;
+  }
+  return false;
+}
+
+async function withFallback(remoteFn, sandboxFn) {
+  try {
+    const res = await remoteFn();
+    // Static host SPA rewrite can return HTML with 200 OK on GET /api/...
+    if (typeof res?.data === 'string' && res.data.toLowerCase().includes('<!doctype html')) {
+      setSandboxFlag(true);
+      return await sandboxFn();
+    }
+    setSandboxFlag(false);
+    return unwrap(res);
+  } catch (err) {
+    if (shouldUseSandboxFallback(err)) {
+      setSandboxFlag(true);
+      return await sandboxFn();
+    }
+    throw err;
+  }
+}
 
 function unwrap(res) {
   if (res?.data && typeof res.data === 'object' && 'data' in res.data && res.data.data !== undefined) {
@@ -111,27 +247,34 @@ export function getToken() {
 // ── Auth APIs ────────────────────────────────────────────────────────────────
 
 export async function registerUser(payload) {
-  const res = await api.post('/api/v1/auth/register', payload);
-  const data = unwrap(res);
+  const data = await withFallback(
+    () => api.post('/api/v1/auth/register', payload),
+    () => sandboxRegister(payload)
+  );
   persistUserSession(data);
   return data;
 }
 
 export async function loginUser(identifier, password, role) {
-  const res = await api.post('/api/v1/auth/login', {
-    identifier: identifier?.trim(),
-    email: identifier?.trim(),
-    password,
-    role: role || undefined,
-  });
-  const data = unwrap(res);
+  const data = await withFallback(
+    () =>
+      api.post('/api/v1/auth/login', {
+        identifier: identifier?.trim(),
+        email: identifier?.trim(),
+        password,
+        role: role || undefined,
+      }),
+    () => sandboxLogin(identifier, password)
+  );
   persistUserSession(data);
   return data;
 }
 
 export async function fetchCurrentUser() {
-  const res = await api.get('/api/v1/auth/me');
-  const data = unwrap(res);
+  const data = await withFallback(
+    () => api.get('/api/v1/auth/me'),
+    () => getStoredUser()
+  );
   if (data) persistUserSession({ user: data });
   return data;
 }
@@ -139,12 +282,9 @@ export async function fetchCurrentUser() {
 export async function doctorLogin(email, password) {
   try {
     return await loginUser(email, password);
-  } catch {
-    const res = await api.post('/api/v1/auth/doctor/login', { email, password }).catch(() => null);
-    const data = res ? unwrap(res) : null;
-    if (data?.token) {
-      persistUserSession(data);
-      return data;
+  } catch (err) {
+    if (!shouldUseSandboxFallback(err)) {
+      throw err;
     }
     const role = (email || '').toLowerCase().includes('admin') ? 'admin' : 'doctor';
     const fallbackData = {
@@ -170,118 +310,138 @@ export async function createSubmission(payload) {
     submitter_role: payload.submitter_role || user?.role || localStorage.getItem('user_role') || '',
     worker_type: payload.worker_type || user?.worker_type || localStorage.getItem('worker_type') || '',
   };
-  const res = await api.post('/api/v1/submissions', body);
-  return unwrap(res);
+  return withFallback(
+    () => api.post('/api/v1/submissions', body),
+    () => sandboxCreateSubmission(body)
+  );
 }
 
 export async function uploadSubmissionPhoto(subId, photoNumber, photoType, base64) {
-  const res = await api.post(
-    `/api/v1/submissions/${subId}/photos`,
-    {
-      photo_number: photoNumber,
-      photo_type: photoType,
-      image_base64: base64,
-    },
-    { timeout: 30000 }
+  return withFallback(
+    () =>
+      api.post(
+        `/api/v1/submissions/${subId}/photos`,
+        { photo_number: photoNumber, photo_type: photoType, image_base64: base64 },
+        { timeout: 30000 }
+      ),
+    () => sandboxUploadPhoto(subId, photoNumber, photoType, base64)
   );
-  return unwrap(res);
 }
 
 export async function uploadSubmissionReport(subId, fileName, fileType, base64) {
-  const res = await api.post(
-    `/api/v1/submissions/${subId}/reports`,
-    {
-      file_name: fileName,
-      file_type: fileType,
-      file_base64: base64,
-    },
-    { timeout: 30000 }
+  return withFallback(
+    () =>
+      api.post(
+        `/api/v1/submissions/${subId}/reports`,
+        { file_name: fileName, file_type: fileType, file_base64: base64 },
+        { timeout: 30000 }
+      ),
+    () => sandboxUploadReport(subId, fileName, fileType, base64)
   );
-  return unwrap(res);
 }
 
 export async function saveClinicalNote(subId, notePayload) {
-  const res = await api.post(`/api/v1/submissions/${subId}/clinical-note`, notePayload);
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/submissions/${subId}/clinical-note`, notePayload),
+    () => sandboxSaveClinicalNote(subId, notePayload)
+  );
 }
 
 export async function submitWorkflowRecord(subId) {
-  const res = await api.post(`/api/v1/submissions/${subId}/submit`, {}, { timeout: 30000 });
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/submissions/${subId}/submit`, {}, { timeout: 30000 }),
+    () => sandboxSubmitRecord(subId)
+  );
 }
 
 export async function fetchMySubmissions(userId) {
   const uid = userId || localStorage.getItem('user_id') || '';
-  const res = await api.get('/api/v1/submissions/my', {
-    params: uid ? { user_id: uid } : {},
-  });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/submissions/my', { params: uid ? { user_id: uid } : {} }),
+    () => sandboxMySubmissions(uid)
+  );
 }
 
 export async function fetchSubmissionDetail(subId) {
-  const res = await api.get(`/api/v1/submissions/${subId}`);
-  return unwrap(res);
+  return withFallback(
+    () => api.get(`/api/v1/submissions/${subId}`),
+    () => sandboxGetSubmission(subId)
+  );
 }
 
 // ── Moderator APIs ───────────────────────────────────────────────────────────
 
 export async function fetchModeratorQueue(status) {
-  const res = await api.get('/api/v1/moderator/queue', {
-    params: status ? { status } : {},
-  });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/moderator/queue', { params: status ? { status } : {} }),
+    () => sandboxModeratorQueue(status)
+  );
 }
 
 export async function moderatorApprove(subId, note) {
-  const res = await api.post(`/api/v1/moderator/${subId}/approve`, { note: note || '' });
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/moderator/${subId}/approve`, { note: note || '' }),
+    () => sandboxModeratorApprove(subId, note)
+  );
 }
 
 export async function moderatorReject(subId, reason) {
-  const res = await api.post(`/api/v1/moderator/${subId}/reject`, { reason });
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/moderator/${subId}/reject`, { reason }),
+    () => sandboxModeratorReject(subId, reason)
+  );
 }
 
 // ── Doctor Validation Queue APIs ─────────────────────────────────────────────
 
 export async function fetchDoctorValidationQueue() {
-  const res = await api.get('/api/v1/doctor/queue');
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/doctor/queue'),
+    () => sandboxDoctorQueue()
+  );
 }
 
 export async function doctorValidateSubmission(subId, notePayload) {
-  const res = await api.post(`/api/v1/doctor/${subId}/validate`, notePayload);
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/doctor/${subId}/validate`, notePayload),
+    () => sandboxDoctorValidate(subId, notePayload)
+  );
 }
 
 // ── Payments APIs ────────────────────────────────────────────────────────────
 
 export async function fetchMyPayments(userId) {
   const uid = userId || localStorage.getItem('user_id') || '';
-  const res = await api.get('/api/v1/payments/my', {
-    params: uid ? { user_id: uid } : {},
-  });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/payments/my', { params: uid ? { user_id: uid } : {} }),
+    () => sandboxMyPayments(uid)
+  );
 }
 
 // ── Admin APIs ───────────────────────────────────────────────────────────────
 
 export async function fetchAdminStats() {
-  const res = await api.get('/api/v1/admin/stats');
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/admin/stats'),
+    () => sandboxAdminStats()
+  );
 }
 
 export async function fetchAdminUsers(role, search) {
   const params = {};
   if (role && role !== 'ALL') params.role = role;
   if (search) params.search = search;
-  const res = await api.get('/api/v1/admin/users', { params });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/admin/users', { params }),
+    () => sandboxAdminUsers(role, search)
+  );
 }
 
 export async function updateAdminUser(userId, payload) {
-  const res = await api.patch(`/api/v1/admin/users/${userId}`, payload);
-  return unwrap(res);
+  return withFallback(
+    () => api.patch(`/api/v1/admin/users/${userId}`, payload),
+    () => sandboxAdminUpdateUser(userId, payload)
+  );
 }
 
 export async function fetchAdminSubmissions(filters = {}) {
@@ -291,17 +451,22 @@ export async function fetchAdminSubmissions(filters = {}) {
       params[k] = v;
     }
   });
-  const res = await api.get('/api/v1/admin/submissions', { params });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/admin/submissions', { params }),
+    () => sandboxAdminSubmissions(filters)
+  );
 }
 
 export async function overrideAdminSubmission(subId, decision, reason) {
-  const res = await api.post(`/api/v1/admin/submissions/${subId}/override`, {
-    decision,
-    status: decision,
-    reason,
-  });
-  return unwrap(res);
+  return withFallback(
+    () =>
+      api.post(`/api/v1/admin/submissions/${subId}/override`, {
+        decision,
+        status: decision,
+        reason,
+      }),
+    () => sandboxAdminOverride(subId, decision, reason)
+  );
 }
 
 export async function fetchAdminPayments(filters = {}) {
@@ -311,21 +476,29 @@ export async function fetchAdminPayments(filters = {}) {
       params[k] = v;
     }
   });
-  const res = await api.get('/api/v1/admin/payments', { params });
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/admin/payments', { params }),
+    () => sandboxAdminPayments(filters)
+  );
 }
 
 export async function markAdminPaymentPaid(paymentId) {
-  const res = await api.post(`/api/v1/admin/payments/${paymentId}/mark-paid`);
-  return unwrap(res);
+  return withFallback(
+    () => api.post(`/api/v1/admin/payments/${paymentId}/mark-paid`),
+    () => sandboxAdminMarkPaid(paymentId)
+  );
 }
 
 export async function fetchAdminRates() {
-  const res = await api.get('/api/v1/admin/rates');
-  return unwrap(res);
+  return withFallback(
+    () => api.get('/api/v1/admin/rates'),
+    () => sandboxGetRates()
+  );
 }
 
 export async function updateAdminRates(rates) {
-  const res = await api.put('/api/v1/admin/rates', rates);
-  return unwrap(res);
+  return withFallback(
+    () => api.put('/api/v1/admin/rates', rates),
+    () => sandboxUpdateRates(rates)
+  );
 }
