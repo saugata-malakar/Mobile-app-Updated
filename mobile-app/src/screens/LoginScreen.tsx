@@ -17,6 +17,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RouteProp} from '@react-navigation/native';
 import type {AppRole, WorkerType} from '../types/app';
 import {
+  getHomeParamsForRole,
   getHomeRouteForRole,
   getSavedLoginCredentials,
   loginWithIdentifier,
@@ -74,6 +75,8 @@ export default function LoginScreen({navigation, route}: Props) {
         return mode === 'login' ? 'Moderator Sign In' : 'Moderator Registration';
       case 'admin':
         return mode === 'login' ? 'Admin Sign In' : 'Admin Registration';
+      case 'patient':
+        return mode === 'login' ? 'Patient Sign In' : 'Patient Registration';
     }
   }, [role, mode]);
 
@@ -100,7 +103,7 @@ export default function LoginScreen({navigation, route}: Props) {
       try {
         const session = await loginWithIdentifier(identifier.trim(), password, role);
         const target = getHomeRouteForRole(session.user.role);
-        navigation.replace(target);
+        navigation.replace(target, getHomeParamsForRole(session.user));
       } catch (e: any) {
         Alert.alert('Sign In Failed', e?.message || 'Invalid credentials.');
       } finally {
@@ -127,7 +130,7 @@ export default function LoginScreen({navigation, route}: Props) {
 
     setBusy(true);
     try {
-      const session = await registerUserV4({
+      const res = await registerUserV4({
         fullName: fullName.trim(),
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
@@ -140,8 +143,18 @@ export default function LoginScreen({navigation, route}: Props) {
         specialization:
           role === 'doctor' ? specialization.trim() || undefined : undefined,
       });
-      const target = getHomeRouteForRole(session.user.role);
-      navigation.replace(target);
+      if (res.pendingApproval || !res.session) {
+        Alert.alert(
+          'Pending Admin Verification',
+          res.message ||
+            'Account submitted for Admin verification. You can sign in once approved by an Administrator.',
+        );
+        setPassword('');
+        setMode('login');
+        return;
+      }
+      const target = getHomeRouteForRole(res.session.user.role);
+      navigation.replace(target, getHomeParamsForRole(res.session.user));
     } catch (e: any) {
       Alert.alert('Registration Failed', e?.message || 'Could not create account.');
     } finally {

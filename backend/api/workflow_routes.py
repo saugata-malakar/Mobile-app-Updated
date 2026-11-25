@@ -32,7 +32,7 @@ from cv.segmentation.wound_segmentation import segment_and_measure_wound
 
 SECRET_KEY = os.getenv("SECRET_KEY", "diabetescare-dev-secret-change-in-prod")
 
-ALLOWED_ROLES = {"doctor", "field_worker", "moderator", "admin"}
+ALLOWED_ROLES = {"doctor", "field_worker", "moderator", "admin", "patient"}
 ALLOWED_WORKER_TYPES = {"ASHA", "ICDS", "CHO"}
 PHOTO_TYPE_BY_NUM = {1: "distant", 2: "medium", 3: "close"}
 
@@ -390,6 +390,12 @@ def create_workflow_router(
                         "Hospital System Admin", "admin", None, "Kharagpur",
                         None, "active", now_iso,
                     ),
+                    (
+                        "PAT_KGP_01", "patient@demo.in", "9831000007", "patient",
+                        "PAT_KGP_01", _hash_password("patient123"),
+                        "Ramesh Chandra Sen", "patient", None, "Paschim Medinipur",
+                        None, "active", now_iso,
+                    ),
                 ]
                 c.executemany(
                     """
@@ -399,6 +405,24 @@ def create_workflow_router(
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     demo_users,
+                )
+
+            # Ensure demo patient exists even on existing DBs
+            c.execute("SELECT COUNT(*) FROM app_users WHERE user_id = 'PAT_KGP_01'")
+            if c.fetchone()[0] == 0:
+                c.execute(
+                    """
+                    INSERT OR IGNORE INTO app_users (
+                        user_id, email, phone, username, worker_id, password_hash,
+                        full_name, role, worker_type, district, specialization, status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        "PAT_KGP_01", "patient@demo.in", "9831000007", "patient",
+                        "PAT_KGP_01", _hash_password("patient123"),
+                        "Ramesh Chandra Sen", "patient", None, "Paschim Medinipur",
+                        None, "active", datetime.utcnow().isoformat(),
+                    ),
                 )
 
         _execute_all(_init_conn)
@@ -446,8 +470,11 @@ def create_workflow_router(
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
         if user.get("status") != "active":
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is suspended")
-        if allowed_roles and user["role"] not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Account is {user.get('status') or 'inactive'}. Contact administrator.",
+            )
+        if allowed_roles and user["role"] != "admin" and user["role"] not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Restricted to roles: {', '.join(sorted(allowed_roles))}",
@@ -662,6 +689,7 @@ def create_workflow_router(
                 "DOC" if role == "doctor"
                 else "MOD" if role == "moderator"
                 else "ADMIN" if role == "admin"
+                else "PAT" if role == "patient"
                 else (worker_type or "FW")
             )
             worker_id = f"{prefix}_{uuid.uuid4().hex[:6].upper()}"
@@ -676,7 +704,7 @@ def create_workflow_router(
                 INSERT INTO app_users (
                     user_id, email, phone, username, worker_id, password_hash,
                     full_name, role, worker_type, district, specialization, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
                 """,
                 (
                     user_id, email, phone, username, worker_id, pw_hash,
@@ -688,13 +716,11 @@ def create_workflow_router(
             return _serialize_user(row)
 
         user_obj = _execute_all(_insert)
-        token = _create_jwt(user_obj)
         return {
-            "status": "success",
+            "status": "pending",
             "data": {
-                "token": token,
-                "access_token": token,
-                "refresh_token": token,
+                "pending_approval": True,
+                "status": "pending",
                 "role": user_obj["role"],
                 "user_id": user_obj["user_id"],
                 "name": user_obj["full_name"],
@@ -703,6 +729,7 @@ def create_workflow_router(
                 "worker_id": user_obj["worker_id"],
                 "worker_type": user_obj["worker_type"],
                 "user": user_obj,
+                "message": "Registration submitted. An Administrator must verify and approve your account before login.",
             },
         }
 
@@ -741,6 +768,16 @@ def create_workflow_router(
         if not row or not _verify_password(payload.password, row["password_hash"]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
+        if row["status"] == "pending":
+            raise HTTPException(
+                status_code=403,
+                detail="Account is pending Admin verification. An Administrator must approve your account before you can sign in.",
+            )
+        if row["status"] == "rejected":
+            raise HTTPException(
+                status_code=403,
+                detail="Your account registration was rejected by the Administrator.",
+            )
         if row["status"] != "active":
             raise HTTPException(status_code=403, detail="Account is suspended. Contact administrator.")
 
@@ -1472,6 +1509,10 @@ def create_workflow_router(
                 r["role"]: r["cnt"]
                 for r in conn.execute("SELECT role, COUNT(*) as cnt FROM app_users GROUP BY role").fetchall()
             }
+            users_by_status = {
+                r["status"]: r["cnt"]
+                for r in conn.execute("SELECT status, COUNT(*) as cnt FROM app_users GROUP BY status").fetchall()
+            }
             subs_by_status = {
                 r["status"]: r["cnt"]
                 for r in conn.execute("SELECT status, COUNT(*) as cnt FROM workflow_submissions GROUP BY status").fetchall()
@@ -1491,6 +1532,8 @@ def create_workflow_router(
         return {
             "total_users": sum(users_by_role.values()),
             "users_by_role": users_by_role,
+            "users_by_status": users_by_status,
+            "pending_users": users_by_status.get("pending", 0),
             "total_submissions": sum(subs_by_status.values()),
             "today_submissions": today_count,
             "pending_moderator": subs_by_status.get("ai_reviewed", 0),
@@ -1505,6 +1548,7 @@ def create_workflow_router(
     @router.get("/api/v1/admin/users")
     def admin_users(
         role: Optional[str] = Query(default=None),
+        status_filter: Optional[str] = Query(default=None, alias="status"),
         search: Optional[str] = Query(default=None),
         authorization: Optional[str] = Header(default=None),
     ):
@@ -1514,6 +1558,9 @@ def create_workflow_router(
         if role:
             sql += " AND LOWER(role) = LOWER(?)"
             params.append(role.strip())
+        if status_filter:
+            sql += " AND LOWER(status) = LOWER(?)"
+            params.append(status_filter.strip())
         if search:
             pat = f"%{search.strip()}%"
             sql += """ AND (
@@ -1522,7 +1569,7 @@ def create_workflow_router(
                 OR COALESCE(worker_id, '') LIKE ? OR COALESCE(district, '') LIKE ?
             )"""
             params.extend([pat] * 6)
-        sql += " ORDER BY created_at DESC"
+        sql += " ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, created_at DESC"
 
         conn = _connect(_primary_db())
         try:
@@ -1541,10 +1588,11 @@ def create_workflow_router(
         updates = []
         params: List[Any] = []
         if payload.status:
-            if payload.status not in ("active", "suspended"):
-                raise HTTPException(status_code=400, detail="status must be 'active' or 'suspended'")
+            st = payload.status.strip().lower()
+            if st not in ("pending", "active", "rejected", "suspended"):
+                raise HTTPException(status_code=400, detail="status must be 'pending', 'active', 'rejected', or 'suspended'")
             updates.append("status = ?")
-            params.append(payload.status)
+            params.append(st)
         if payload.role:
             r = payload.role.strip().lower()
             if r not in ALLOWED_ROLES:
@@ -1572,6 +1620,34 @@ def create_workflow_router(
         if not updated:
             raise HTTPException(status_code=404, detail="User not found")
         return {"user": updated}
+
+    @router.post("/api/v1/admin/users/{user_id}/approve")
+    def admin_approve_user(user_id: str, authorization: Optional[str] = Header(default=None)):
+        _require_user(authorization, allowed_roles={"admin"})
+
+        def _approve(conn: sqlite3.Connection):
+            conn.execute("UPDATE app_users SET status = 'active' WHERE user_id = ?", (user_id,))
+            row = conn.execute("SELECT * FROM app_users WHERE user_id = ?", (user_id,)).fetchone()
+            return _serialize_user(row) if row else None
+
+        updated = _execute_all(_approve)
+        if not updated:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"user": updated, "message": "User verified and activated"}
+
+    @router.post("/api/v1/admin/users/{user_id}/reject")
+    def admin_reject_user(user_id: str, authorization: Optional[str] = Header(default=None)):
+        _require_user(authorization, allowed_roles={"admin"})
+
+        def _reject(conn: sqlite3.Connection):
+            conn.execute("UPDATE app_users SET status = 'rejected' WHERE user_id = ?", (user_id,))
+            row = conn.execute("SELECT * FROM app_users WHERE user_id = ?", (user_id,)).fetchone()
+            return _serialize_user(row) if row else None
+
+        updated = _execute_all(_reject)
+        if not updated:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"user": updated, "message": "User registration rejected"}
 
     @router.get("/api/v1/admin/submissions")
     def admin_submissions(

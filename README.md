@@ -55,17 +55,18 @@ Version **4.0.0** unifies the **Android Mobile App** (`com.iitkgp.diabetescareai
 * Inspects patient vitals, AI quality scores, and zoomable 3-angle photos.
 * **Approve** (`₹20` credited, forwards to Doctor Queue) or **Reject** (mandatory rejection reason).
 
-### 4. ⚙️ Admin (`admin`)
+### 4. ⚙️ Admin (`admin` — All-Access Governance & Verification Gate)
 * Full control center in both **Website (`/admin-overview`, `/admin/users`, `/admin/submissions`, `/admin/payments`)** and **Mobile App (`AdminHomeScreen`)**:
-  * **Users Management**: View all registered Doctors, ASHA/ICDS/CHO workers, Moderators, and Admins; filter/search; Activate/Suspend; change roles.
-  * **Submissions Inspector**: Inspect every submission, all 3 photos (+ AI overlays), medical reports, moderator decisions, doctor clinical notes, and execute **Admin Overrides** (Force Accept / Force Reject).
+  * **Account Verification Gate (All Roles)**: Every newly registered account (**Doctor, ASHA/ICDS/CHO, Moderator, Admin, Patient**) starts in **`pending`** status and cannot sign in until an Administrator verifies & approves (`✓ Verify & Approve`) or rejects (`✕ Reject`) the account in **Admin → Users**.
+  * **All-Access Portal Switcher**: Admin can access every portal & route across the platform (**Doctor Portal, Validation Queue, ASHA/Field Collector, Moderator QA, Patient View, DPDP Compliance, Settings**) with full permissions.
+  * **Submissions Inspector & Overrides**: Inspect every submission, all 3 photos (+ AI overlays), medical reports, moderator decisions, doctor clinical notes, and execute **Admin Overrides** (Force Accept / Force Reject).
   * **Payments Ledger & Payout Rates**: Track ₹80 / ₹20 / ₹50 / ₹20 / ₹30 splits, Mark Paid, Export CSV, and configure payout rates.
 
 ---
 
 ## 🔑 Multi-Option Login & Seeded Test Accounts
 
-Users can register immediately with **any role** (`Doctor`, `ASHA / ICDS / CHO`, `Moderator`, `Admin`) and sign in using **Email, Phone Number, Username, or Worker ID** + Password, or use the 1-click quick cards:
+Newly registered accounts for **all roles** (`Doctor`, `ASHA / ICDS / CHO`, `Moderator`, `Admin`, `Patient`) enter **`pending` Admin verification** until approved. Pre-seeded demo accounts are pre-verified for immediate testing via **Email, Phone Number, Username, or Worker ID + Password** (or 1-click quick cards):
 
 | Role | Email | Worker ID / Username | Phone | Password |
 |---|---|---|---|---|
@@ -75,6 +76,7 @@ Users can register immediately with **any role** (`Doctor`, `ASHA / ICDS / CHO`,
 | **CHO** | `cho@demo.in` | `CHO_WB_0015` / `cho001` | `9831000006` | `cho123` |
 | **Moderator** | `moderator@demo.in` | `MOD_MMCH_01` / `mod001` | `9831000004` | `mod123` |
 | **Admin** | `admin@hospital.in` | `ADMIN_MMCH_01` / `admin` | `9831000005` | `admin123` |
+| **Patient** | `patient@demo.in` | `PAT_KGP_01` / `patient` | `9831000007` | `patient123` |
 
 ---
 

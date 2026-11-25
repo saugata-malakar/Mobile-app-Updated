@@ -50,6 +50,7 @@ export function RoleBadge({ role, workerType }) {
     moderator: { cls: 'bg-violet-950/70 text-violet-300 border-violet-700/60', text: 'Moderator' },
     admin: { cls: 'bg-amber-950/70 text-amber-300 border-amber-700/60', text: 'Admin' },
     hospital_admin: { cls: 'bg-amber-950/70 text-amber-300 border-amber-700/60', text: 'Admin' },
+    patient: { cls: 'bg-sky-950/70 text-sky-300 border-sky-700/60', text: 'Patient' },
   };
   const cfg = map[r] || { cls: 'bg-slate-800 text-slate-300 border-slate-600', text: r || 'User' };
   return (

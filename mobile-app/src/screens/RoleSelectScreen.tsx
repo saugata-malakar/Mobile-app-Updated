@@ -56,9 +56,18 @@ const ROLES: Array<{
     icon: '⚙️',
     title: 'Admin',
     subtitle:
-      'Monitor daily stats, approve or suspend users, inspect submissions, and manage ₹ payouts.',
-    badge: 'Governance',
+      'All-access governance: verify new accounts, switch into any portal, inspect submissions & manage ₹ payouts.',
+    badge: 'Full Access',
     accent: '#8B5CF6',
+  },
+  {
+    role: 'patient',
+    icon: '🩹',
+    title: 'Patient',
+    subtitle:
+      'Track diabetic foot screening records, clinical prescriptions, and follow-up visits.',
+    badge: 'Patient Care',
+    accent: '#10B981',
   },
 ];
 

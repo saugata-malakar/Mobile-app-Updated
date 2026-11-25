@@ -50,7 +50,7 @@ const ROLES = [
   {
     id: 'admin',
     title: 'Admin',
-    subtitle: 'Full system, users, overrides & ₹ payouts',
+    subtitle: 'Full system, users, approvals & ₹ payouts',
     icon: '⚙️',
     badge: 'Admin Control',
     demoIdentifier: 'admin@hospital.in',
@@ -58,6 +58,18 @@ const ROLES = [
     demoLabel: 'Admin Demo',
     border: 'border-amber-500/60',
     route: '/admin-overview',
+  },
+  {
+    id: 'patient',
+    title: 'Patient',
+    subtitle: 'Healing journey, wound history & teleconsult',
+    icon: '🩹',
+    badge: 'Patient Portal',
+    demoIdentifier: 'patient@demo.in',
+    demoPassword: 'patient123',
+    demoLabel: 'Patient Demo',
+    border: 'border-sky-500/60',
+    route: '/patient-portal',
   },
 ];
 
@@ -68,6 +80,7 @@ const QUICK_DEMOS = [
   { label: '📋 CHO', role: 'field_worker', worker_type: 'CHO', identifier: 'cho@demo.in', password: 'cho123', name: 'CHO Officer Demo' },
   { label: '🔍 Moderator', role: 'moderator', identifier: 'moderator@demo.in', password: 'mod123', name: 'QA Moderator' },
   { label: '⚙️ Admin', role: 'admin', identifier: 'admin@hospital.in', password: 'admin123', name: 'System Admin' },
+  { label: '🩹 Patient', role: 'patient', identifier: 'patient@demo.in', password: 'patient123', name: 'Ramesh Chandra Sen' },
 ];
 
 function routeForRole(role) {
@@ -107,6 +120,7 @@ export default function DoctorLogin() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [pendingNotice, setPendingNotice] = useState(null);
   const [backendStatus, setBackendStatus] = useState({ checked: false, connected: false, url: getApiBaseUrl() });
   const [showServerConfig, setShowServerConfig] = useState(false);
   const [serverInput, setServerInput] = useState(getApiBaseUrl() || 'http://localhost:8000');
@@ -220,6 +234,20 @@ export default function DoctorLogin() {
         specialization: selectedRole.id === 'doctor' ? specialization.trim() : undefined,
       };
       const data = await registerUser(payload);
+      if (data?.pending_approval || data?.user?.status === 'pending' || !data?.token) {
+        setPendingNotice({
+          name: data?.name || fullName.trim(),
+          role: selectedRole.title,
+          workerId: data?.worker_id || data?.user_id || regUsername.trim() || regEmail.trim() || regPhone.trim(),
+          message:
+            data?.message ||
+            'Your account has been registered and is awaiting Administrator verification before you can sign in.',
+        });
+        setMode('login');
+        setIdentifier(regEmail.trim() || regPhone.trim() || regUsername.trim() || '');
+        setPassword('');
+        return;
+      }
       const effectiveRole = data?.user?.role || data?.role || selectedRole.id;
       navigate(routeForRole(effectiveRole));
     } catch (err) {
@@ -361,7 +389,7 @@ export default function DoctorLogin() {
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
               1. Select Your Role
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {ROLES.map((role) => {
                 const isSelected = selectedRole.id === role.id;
                 return (
@@ -388,6 +416,38 @@ export default function DoctorLogin() {
               })}
             </div>
           </div>
+
+          {pendingNotice && (
+            <div className="p-4 rounded-xl bg-amber-950/60 border border-amber-500/60 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  ⏳ Registration Submitted — Pending Admin Verification
+                </p>
+                <span className="px-2 py-0.5 rounded bg-amber-900/60 text-amber-200 text-[10px] font-mono">
+                  ID: {pendingNotice.workerId}
+                </span>
+              </div>
+              <p className="text-xs text-amber-100 leading-relaxed">
+                <strong>{pendingNotice.name}</strong> ({pendingNotice.role}) — {pendingNotice.message}
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo(QUICK_DEMOS[5])}
+                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold"
+                >
+                  Sign In as Admin to Verify Now →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingNotice(null)}
+                  className="px-3 py-1.5 rounded-lg bg-[#162347] hover:bg-[#1E2F5E] text-slate-200 text-[11px] font-semibold"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
 
           {errorMsg && (
             <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-700/60 text-rose-200 text-xs font-semibold">

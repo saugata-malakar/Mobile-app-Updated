@@ -25,6 +25,7 @@ import type {
 } from '../../types/app';
 import {getAuthSession, logoutV4} from '../../services/authService';
 import {
+  approveAdminUser,
   getAdminPayments,
   getAdminStats,
   getAdminSubmissions,
@@ -32,6 +33,7 @@ import {
   getSubmissionDetail,
   markAdminPaymentPaid,
   overrideAdminSubmission,
+  rejectAdminUser,
   resolvePhotoUri,
   updateAdminUser,
 } from '../../services/v4WorkflowService';
@@ -55,6 +57,7 @@ export default function AdminHomeScreen({navigation}: Props) {
 
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [userStatusFilter, setUserStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectSub, setInspectSub] = useState<SubmissionRecord | null>(null);
 
@@ -64,9 +67,11 @@ export default function AdminHomeScreen({navigation}: Props) {
     try {
       const [s, u, subs, pays] = await Promise.all([
         getAdminStats().catch(() => null),
-        getAdminUsers(roleFilter || undefined, searchQuery || undefined).catch(
-          () => [],
-        ),
+        getAdminUsers(
+          roleFilter || undefined,
+          searchQuery || undefined,
+          userStatusFilter || undefined,
+        ).catch(() => []),
         getAdminSubmissions(
           statusFilter || undefined,
           roleFilter || undefined,
@@ -85,7 +90,7 @@ export default function AdminHomeScreen({navigation}: Props) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [roleFilter, statusFilter, searchQuery]);
+  }, [roleFilter, statusFilter, userStatusFilter, searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -111,6 +116,36 @@ export default function AdminHomeScreen({navigation}: Props) {
       Alert.alert('Update Failed', err?.message || 'Could not update user.');
     }
   };
+
+  const handleApproveUser = async (item: AdminUserItem) => {
+    try {
+      await approveAdminUser(item.user_id);
+      Alert.alert(
+        'Account Verified',
+        `${item.full_name || item.username || item.email} (${item.role}) can now sign in.`,
+      );
+      loadAll();
+    } catch (err: any) {
+      Alert.alert('Verification Failed', err?.message || 'Could not verify user.');
+    }
+  };
+
+  const handleRejectUser = async (item: AdminUserItem) => {
+    try {
+      await rejectAdminUser(item.user_id, 'Rejected by Admin');
+      Alert.alert(
+        'Account Rejected',
+        `${item.full_name || item.username || item.email} was rejected.`,
+      );
+      loadAll();
+    } catch (err: any) {
+      Alert.alert('Rejection Failed', err?.message || 'Could not reject user.');
+    }
+  };
+
+  const pendingUsersCount =
+    stats?.pending_users ??
+    users.filter(u => String(u.status || '').toLowerCase() === 'pending').length;
 
   const openInspect = async (sub: SubmissionRecord) => {
     setInspectSub(sub);
@@ -192,18 +227,24 @@ export default function AdminHomeScreen({navigation}: Props) {
             <Text style={styles.kpiVal}>{stats?.total_users ?? users.length}</Text>
           </View>
           <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Pending Users</Text>
+            <Text style={[styles.kpiVal, {color: '#FBBF24'}]}>
+              {pendingUsersCount}
+            </Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Case Reviews Pending</Text>
+            <Text style={[styles.kpiVal, {color: V4_COLORS.warning}]}>
+              {pendingReviewCount}
+            </Text>
+          </View>
+          <View style={styles.kpiCard}>
             <Text style={styles.kpiLabel}>Submissions Today</Text>
             <Text style={styles.kpiVal}>
               {stats?.today_submissions ??
                 stats?.submissions_today ??
                 stats?.total_submissions ??
                 submissions.length}
-            </Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <Text style={styles.kpiLabel}>Pending Review</Text>
-            <Text style={[styles.kpiVal, {color: V4_COLORS.warning}]}>
-              {pendingReviewCount}
             </Text>
           </View>
           <View style={styles.kpiCard}>
@@ -216,6 +257,23 @@ export default function AdminHomeScreen({navigation}: Props) {
             </Text>
           </View>
         </View>
+
+        {pendingUsersCount > 0 ? (
+          <TouchableOpacity
+            style={styles.pendingBanner}
+            onPress={() => {
+              setTab('users');
+              setUserStatusFilter('pending');
+              setRoleFilter('');
+            }}>
+            <Text style={styles.pendingBannerTitle}>
+              ⏳ {pendingUsersCount} Account{pendingUsersCount === 1 ? '' : 's'} Waiting for Admin Verification
+            </Text>
+            <Text style={styles.pendingBannerSub}>
+              Tap to review and approve Doctor, ASHA, Moderator, Admin & Patient sign-ups →
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Section Navigation */}
         <View style={styles.tabsRow}>
@@ -255,20 +313,46 @@ export default function AdminHomeScreen({navigation}: Props) {
               horizontal
               showsHorizontalScrollIndicator={false}
               style={{marginTop: 8}}>
-              {['', 'doctor', 'field_worker', 'moderator', 'admin'].map(r => (
-                <TouchableOpacity
-                  key={r || 'all'}
-                  style={[
-                    styles.filterChip,
-                    roleFilter === r && styles.filterChipActive,
-                  ]}
-                  onPress={() => setRoleFilter(r)}>
-                  <Text style={styles.filterChipText}>
-                    {r ? r.replace('_', ' ') : 'All Roles'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {['', 'doctor', 'field_worker', 'moderator', 'admin', 'patient'].map(
+                r => (
+                  <TouchableOpacity
+                    key={r || 'all'}
+                    style={[
+                      styles.filterChip,
+                      roleFilter === r && styles.filterChipActive,
+                    ]}
+                    onPress={() => setRoleFilter(r)}>
+                    <Text style={styles.filterChipText}>
+                      {r ? r.replace('_', ' ') : 'All Roles'}
+                    </Text>
+                  </TouchableOpacity>
+                ),
+              )}
             </ScrollView>
+            {tab === 'users' && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{marginTop: 8}}>
+                {[
+                  {key: '', label: 'All Statuses'},
+                  {key: 'pending', label: 'Pending Verify'},
+                  {key: 'active', label: 'Active'},
+                  {key: 'rejected', label: 'Rejected'},
+                  {key: 'suspended', label: 'Suspended'},
+                ].map(st => (
+                  <TouchableOpacity
+                    key={st.key || 'all_u_st'}
+                    style={[
+                      styles.filterChip,
+                      userStatusFilter === st.key && styles.filterChipActive,
+                    ]}
+                    onPress={() => setUserStatusFilter(st.key)}>
+                    <Text style={styles.filterChipText}>{st.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
         )}
 
@@ -278,7 +362,59 @@ export default function AdminHomeScreen({navigation}: Props) {
 
         {tab === 'overview' && (
           <>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
+            <Text style={styles.sectionTitle}>All-Access Portal Switcher</Text>
+            <View style={styles.portalGrid}>
+              {[
+                {
+                  label: '👨‍⚕️ Doctor Portal',
+                  sub: 'Collect & Validate',
+                  onPress: () => navigation.navigate('DoctorHome'),
+                },
+                {
+                  label: '📥 Validation Queue',
+                  sub: 'Approve ASHA Cases',
+                  onPress: () => navigation.navigate('DoctorQueue'),
+                },
+                {
+                  label: '📋 ASHA / Field Portal',
+                  sub: '3-Photo Intake',
+                  onPress: () => navigation.navigate('FieldWorkerHome'),
+                },
+                {
+                  label: '🔍 Moderator QA',
+                  sub: 'Photo Quality Review',
+                  onPress: () => navigation.navigate('ModeratorHome'),
+                },
+                {
+                  label: '🧭 Command Hub',
+                  sub: 'Clinical Cohort View',
+                  onPress: () =>
+                    navigation.navigate('DoctorCommandHub', {
+                      userRole: 'hospital_admin',
+                    }),
+                },
+                {
+                  label: '🩹 Patient View',
+                  sub: 'Patient Journey Portal',
+                  onPress: () =>
+                    navigation.navigate('DoctorCommandHub', {
+                      userRole: 'patient',
+                    }),
+                },
+              ].map(p => (
+                <TouchableOpacity
+                  key={p.label}
+                  style={styles.portalBtn}
+                  onPress={p.onPress}>
+                  <Text style={styles.portalBtnTitle}>{p.label}</Text>
+                  <Text style={styles.portalBtnSub}>{p.sub}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.sectionTitle, {marginTop: 6}]}>
+              Recent Activity
+            </Text>
             {submissions.slice(0, 8).map(sub => {
               const badge = statusBadgeInfo(sub.status);
               return (
@@ -307,10 +443,28 @@ export default function AdminHomeScreen({navigation}: Props) {
 
         {tab === 'users' &&
           users.map(u => {
-            const active =
-              u.status ? u.status === 'active' : u.is_active !== false;
+            const st = String(
+              u.status || (u.is_active === false ? 'suspended' : 'active'),
+            ).toLowerCase();
+            const badgeBg =
+              st === 'active'
+                ? 'rgba(34, 197, 94, 0.2)'
+                : st === 'pending'
+                ? 'rgba(245, 158, 11, 0.22)'
+                : 'rgba(239, 68, 68, 0.2)';
+            const badgeColor =
+              st === 'active'
+                ? '#86EFAC'
+                : st === 'pending'
+                ? '#FDE68A'
+                : '#FCA5A5';
             return (
-              <View key={u.user_id} style={styles.rowCard}>
+              <View
+                key={u.user_id}
+                style={[
+                  styles.rowCard,
+                  st === 'pending' && styles.pendingRowCard,
+                ]}>
                 <View style={styles.rowTop}>
                   <View style={{flex: 1}}>
                     <Text style={styles.rowTitle}>
@@ -322,25 +476,84 @@ export default function AdminHomeScreen({navigation}: Props) {
                       {u.worker_id || u.email || u.phone}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.statusToggle,
-                      {
-                        backgroundColor: active
-                          ? 'rgba(34, 197, 94, 0.2)'
-                          : 'rgba(239, 68, 68, 0.2)',
-                      },
-                    ]}
-                    onPress={() => toggleUserStatus(u)}>
+                  <View style={[styles.badge, {backgroundColor: badgeBg}]}>
                     <Text
-                      style={{
-                        color: active ? '#86EFAC' : '#FCA5A5',
-                        fontWeight: '800',
-                        fontSize: 11,
-                      }}>
-                      {active ? 'Active · Suspend' : 'Suspended · Activate'}
+                      style={[
+                        styles.badgeText,
+                        {color: badgeColor, textTransform: 'uppercase'},
+                      ]}>
+                      {st}
                     </Text>
-                  </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.userActionsRow}>
+                  {st === 'pending' ? (
+                    <>
+                      <TouchableOpacity
+                        style={[
+                          styles.statusToggle,
+                          {backgroundColor: 'rgba(34, 197, 94, 0.24)'},
+                        ]}
+                        onPress={() => handleApproveUser(u)}>
+                        <Text
+                          style={{
+                            color: '#86EFAC',
+                            fontWeight: '800',
+                            fontSize: 11,
+                          }}>
+                          ✓ Verify & Approve
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.statusToggle,
+                          {backgroundColor: 'rgba(239, 68, 68, 0.22)'},
+                        ]}
+                        onPress={() => handleRejectUser(u)}>
+                        <Text
+                          style={{
+                            color: '#FCA5A5',
+                            fontWeight: '800',
+                            fontSize: 11,
+                          }}>
+                          ✕ Reject
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : st === 'active' ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.statusToggle,
+                        {backgroundColor: 'rgba(239, 68, 68, 0.2)'},
+                      ]}
+                      onPress={() => toggleUserStatus(u)}>
+                      <Text
+                        style={{
+                          color: '#FCA5A5',
+                          fontWeight: '800',
+                          fontSize: 11,
+                        }}>
+                        Suspend Account
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.statusToggle,
+                        {backgroundColor: 'rgba(34, 197, 94, 0.22)'},
+                      ]}
+                      onPress={() => handleApproveUser(u)}>
+                      <Text
+                        style={{
+                          color: '#86EFAC',
+                          fontWeight: '800',
+                          fontSize: 11,
+                        }}>
+                        ✓ Verify / Activate
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             );
@@ -680,5 +893,58 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  pendingBanner: {
+    backgroundColor: 'rgba(245, 158, 11, 0.16)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+    padding: 13,
+    marginBottom: 14,
+  },
+  pendingBannerTitle: {
+    color: '#FDE68A',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  pendingBannerSub: {
+    color: '#FEF3C7',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  portalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  portalBtn: {
+    width: '48.8%',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+    padding: 11,
+    marginBottom: 9,
+  },
+  portalBtnTitle: {
+    color: V4_COLORS.text,
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  portalBtnSub: {
+    color: V4_COLORS.mutedText,
+    fontSize: 11,
+    marginTop: 3,
+  },
+  pendingRowCard: {
+    borderColor: 'rgba(245, 158, 11, 0.45)',
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+  },
+  userActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 10,
   },
 });

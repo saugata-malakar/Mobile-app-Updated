@@ -1,4 +1,4 @@
-export type AppRole = 'doctor' | 'field_worker' | 'moderator' | 'admin';
+export type AppRole = 'doctor' | 'field_worker' | 'moderator' | 'admin' | 'patient';
 export type WorkerType = 'ASHA' | 'ICDS' | 'CHO';
 
 export interface UserProfile {
@@ -12,12 +12,20 @@ export interface UserProfile {
   workerType?: WorkerType;
   district?: string;
   specialization?: string;
-  status?: string;
+  status?: 'pending' | 'active' | 'rejected' | 'suspended' | string;
   isActive?: boolean;
 }
 
 export interface AuthSession {
   token: string;
+  user: UserProfile;
+}
+
+export interface RegisterResult {
+  pendingApproval: boolean;
+  status: string;
+  message?: string;
+  session?: AuthSession;
   user: UserProfile;
 }
 
@@ -191,7 +199,9 @@ export interface AdminUserItem {
 
 export interface AdminStats {
   total_users: number;
+  pending_users?: number;
   users_by_role: Record<string, number>;
+  users_by_status?: Record<string, number>;
   total_submissions: number;
   submissions_today?: number;
   today_submissions?: number;

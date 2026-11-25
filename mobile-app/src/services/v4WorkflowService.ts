@@ -353,6 +353,7 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function getAdminUsers(
   role?: string,
   search?: string,
+  status?: string,
 ): Promise<AdminUserItem[]> {
   const headers = await authHeaders();
   const params: string[] = [];
@@ -361,6 +362,9 @@ export async function getAdminUsers(
   }
   if (search) {
     params.push(`search=${encodeURIComponent(search)}`);
+  }
+  if (status) {
+    params.push(`status=${encodeURIComponent(status)}`);
   }
   const qs = params.length ? `?${params.join('&')}` : '';
   const res = await fetch(`${getApiBaseUrl()}/api/v1/admin/users${qs}`, {
@@ -372,7 +376,11 @@ export async function getAdminUsers(
 
 export async function updateAdminUser(
   userId: string,
-  updates: {status?: 'active' | 'suspended'; role?: string; district?: string},
+  updates: {
+    status?: 'pending' | 'active' | 'rejected' | 'suspended';
+    role?: string;
+    district?: string;
+  },
 ): Promise<AdminUserItem> {
   const headers = await authHeaders({'Content-Type': 'application/json'});
   const res = await fetch(`${getApiBaseUrl()}/api/v1/admin/users/${userId}`, {
@@ -380,6 +388,34 @@ export async function updateAdminUser(
     headers,
     body: JSON.stringify(updates),
   });
+  return parseJsonOrThrow<AdminUserItem>(res);
+}
+
+export async function approveAdminUser(userId: string): Promise<AdminUserItem> {
+  const headers = await authHeaders({'Content-Type': 'application/json'});
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/admin/users/${userId}/approve`,
+    {
+      method: 'POST',
+      headers,
+    },
+  );
+  return parseJsonOrThrow<AdminUserItem>(res);
+}
+
+export async function rejectAdminUser(
+  userId: string,
+  reason?: string,
+): Promise<AdminUserItem> {
+  const headers = await authHeaders({'Content-Type': 'application/json'});
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/admin/users/${userId}/reject`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(reason ? {reason} : {}),
+    },
+  );
   return parseJsonOrThrow<AdminUserItem>(res);
 }
 

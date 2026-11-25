@@ -26,6 +26,7 @@ import {
   setApiBaseUrl,
 } from '../config/api';
 import {
+  getHomeParamsForRole,
   getHomeRouteForRole,
   getSavedLoginCredentials,
   loginWithIdentifier,
@@ -90,11 +91,21 @@ const ROLE_CARDS: Array<{
     role: 'admin',
     icon: '⚙️',
     title: 'Admin',
-    badge: 'Full Governance',
+    badge: 'Full System Access',
     color: '#8B5CF6',
-    desc: 'Platform dashboard: manage users, inspect all submissions & photos, override & disburse ₹ payouts.',
+    desc: 'All-access governance: verify new accounts, access every portal, inspect cases & ₹ payouts.',
     demoId: 'admin',
     demoPass: 'admin123',
+  },
+  {
+    role: 'patient',
+    icon: '🩹',
+    title: 'Patient',
+    badge: 'Patient Self-Care',
+    color: '#10B981',
+    desc: 'View diabetic foot screening journey, ulcer trajectory, clinical notes & follow-up alerts.',
+    demoId: 'patient@demo.in',
+    demoPass: 'patient123',
   },
 ];
 
@@ -126,6 +137,11 @@ export default function PortalLoginScreen() {
   const [customUrlInput, setCustomUrlInput] = useState(getApiBaseUrl());
   const [busy, setBusy] = useState(false);
   const [hasSavedCreds, setHasSavedCreds] = useState(false);
+  const [pendingNotice, setPendingNotice] = useState<{
+    name: string;
+    role: string;
+    message: string;
+  } | null>(null);
 
   const checkHealth = useCallback(async (urlToTest?: string) => {
     const ok = await pingServerHealth(urlToTest);
@@ -172,7 +188,10 @@ export default function PortalLoginScreen() {
       setBusy(true);
       try {
         const session = await loginWithIdentifier(id, pw, role);
-        navigation.replace(getHomeRouteForRole(session.user.role));
+        navigation.replace(
+          getHomeRouteForRole(session.user.role),
+          getHomeParamsForRole(session.user),
+        );
       } catch (err: any) {
         Alert.alert(
           'Sign In Failed',
@@ -203,8 +222,9 @@ export default function PortalLoginScreen() {
     }
 
     setBusy(true);
+    setPendingNotice(null);
     try {
-      const session = await registerUserV4({
+      const result = await registerUserV4({
         fullName: fullName.trim(),
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
@@ -222,7 +242,25 @@ export default function PortalLoginScreen() {
             ? specialization.trim() || undefined
             : undefined,
       });
-      navigation.replace(getHomeRouteForRole(session.user.role));
+
+      if (result.pendingApproval || !result.session) {
+        const msg =
+          result.message ||
+          'Every new account must be verified & approved by an Administrator before signing in.';
+        setPendingNotice({
+          name: result.user.fullName || fullName.trim(),
+          role: selectedRole.replace('_', ' '),
+          message: msg,
+        });
+        setPassword('');
+        Alert.alert('Pending Admin Verification', msg);
+        return;
+      }
+
+      navigation.replace(
+        getHomeRouteForRole(result.session.user.role),
+        getHomeParamsForRole(result.session.user),
+      );
     } catch (err: any) {
       Alert.alert(
         'Registration Failed',
@@ -351,7 +389,10 @@ export default function PortalLoginScreen() {
             <View style={styles.segment}>
               <TouchableOpacity
                 style={[styles.segBtn, mode === 'login' && styles.segActive]}
-                onPress={() => setMode('login')}>
+                onPress={() => {
+                  setPendingNotice(null);
+                  setMode('login');
+                }}>
                 <Text
                   style={[
                     styles.segText,
@@ -362,7 +403,10 @@ export default function PortalLoginScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.segBtn, mode === 'register' && styles.segActive]}
-                onPress={() => setMode('register')}>
+                onPress={() => {
+                  setPendingNotice(null);
+                  setMode('register');
+                }}>
                 <Text
                   style={[
                     styles.segText,
@@ -372,6 +416,30 @@ export default function PortalLoginScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {pendingNotice ? (
+              <View style={styles.pendingBox}>
+                <Text style={styles.pendingTitle}>
+                  ⏳ Pending Admin Verification
+                </Text>
+                <Text style={styles.pendingText}>
+                  {pendingNotice.name} ({pendingNotice.role}):{' '}
+                  {pendingNotice.message}
+                </Text>
+                <TouchableOpacity
+                  style={styles.pendingAdminBtn}
+                  onPress={() => {
+                    setSelectedRole('admin');
+                    setMode('login');
+                    setIdentifier('admin');
+                    setPassword('admin123');
+                  }}>
+                  <Text style={styles.pendingAdminBtnText}>
+                    Sign In as Admin to Verify →
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
             {mode === 'login' ? (
               <>
@@ -560,8 +628,8 @@ export default function PortalLoginScreen() {
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <Text style={styles.primaryBtnText}>
-                      Register & Launch{' '}
-                      {ROLE_CARDS.find(r => r.role === selectedRole)?.title}
+                      Submit {ROLE_CARDS.find(r => r.role === selectedRole)?.title}{' '}
+                      (Requires Admin Verify)
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -897,4 +965,38 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   modalActionText: {color: '#FFFFFF', fontWeight: '800', fontSize: 13},
+  pendingBox: {
+    marginBottom: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    padding: 12,
+  },
+  pendingTitle: {
+    color: '#FDE68A',
+    fontWeight: '900',
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  pendingText: {
+    color: '#FEF3C7',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  pendingAdminBtn: {
+    marginTop: 10,
+    backgroundColor: 'rgba(139, 92, 246, 0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.6)',
+    borderRadius: 9,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignSelf: 'flex-start',
+  },
+  pendingAdminBtnText: {
+    color: '#EDE9FE',
+    fontWeight: '800',
+    fontSize: 12,
+  },
 });

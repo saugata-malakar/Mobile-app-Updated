@@ -1,6 +1,12 @@
 import RNFS from 'react-native-fs';
 import {getApiBaseUrl} from '../config/api';
-import type {AppRole, AuthSession, UserProfile, WorkerType} from '../types/app';
+import type {
+  AppRole,
+  AuthSession,
+  RegisterResult,
+  UserProfile,
+  WorkerType,
+} from '../types/app';
 
 const SESSION_FILE = `${RNFS.DocumentDirectoryPath}/diabetescare_v4_session.json`;
 const SAVED_CREDS_FILE = `${RNFS.DocumentDirectoryPath}/diabetescare_saved_creds.json`;
@@ -13,7 +19,8 @@ function mapApiUser(raw: any): UserProfile {
     rawRole === 'doctor' ||
     rawRole === 'field_worker' ||
     rawRole === 'moderator' ||
-    rawRole === 'admin'
+    rawRole === 'admin' ||
+    rawRole === 'patient'
       ? rawRole
       : rawRole === 'asha' || rawRole === 'data_collector'
       ? 'field_worker'
@@ -126,7 +133,12 @@ export async function getSavedLoginCredentials(
 
 export function getHomeRouteForRole(
   role: AppRole,
-): 'DoctorHome' | 'FieldWorkerHome' | 'ModeratorHome' | 'AdminHome' {
+):
+  | 'DoctorHome'
+  | 'FieldWorkerHome'
+  | 'ModeratorHome'
+  | 'AdminHome'
+  | 'DoctorCommandHub' {
   switch (role) {
     case 'doctor':
       return 'DoctorHome';
@@ -136,7 +148,30 @@ export function getHomeRouteForRole(
       return 'ModeratorHome';
     case 'admin':
       return 'AdminHome';
+    case 'patient':
+      return 'DoctorCommandHub';
   }
+}
+
+export function getHomeParamsForRole(user: UserProfile): any {
+  if (user.role === 'patient') {
+    return {
+      userRole: 'patient',
+      userProfile: {
+        role: 'patient',
+        name: user.fullName,
+        title: 'Registered Cohort Patient',
+        badge: 'Patient Portal',
+        badgeColor: '#10B981',
+        description:
+          'Longitudinal wound journey, clinical prescriptions & teleconsultation.',
+        icon: '🩹',
+        mrnOrId: user.workerId || user.userId,
+        facility: user.district || 'Kharagpur Rural · Paschim Medinipur',
+      },
+    };
+  }
+  return undefined;
 }
 
 async function parseErrorMessage(res: Response): Promise<string> {
@@ -211,7 +246,7 @@ export async function loginWithIdentifier(
 
 export async function registerUserV4(
   params: RegisterV4Params,
-): Promise<AuthSession> {
+): Promise<RegisterResult> {
   const baseUrl = getApiBaseUrl();
   const payload: Record<string, unknown> = {
     full_name: params.fullName.trim(),
@@ -252,41 +287,45 @@ export async function registerUserV4(
 
   const regJson = await regRes.json();
   const regData = regJson?.data ?? regJson;
+  const user = mapApiUser(regData?.user || regData);
   const directToken = regData?.token || regData?.access_token;
-  if (directToken) {
-    const user = mapApiUser(regData?.user || regData);
-    const session: AuthSession = {token: directToken, user};
-    await saveAuthSession(session);
-    const savedIdent =
-      params.username?.trim() ||
-      params.workerId?.trim() ||
-      params.email?.trim() ||
-      params.phone?.trim() ||
-      user.workerId ||
-      user.email ||
-      '';
-    if (savedIdent) {
-      await saveLoginCredentials(user.role, savedIdent, params.password);
-    }
-    return session;
+  const isPending =
+    Boolean(regData?.pending_approval) ||
+    regJson?.status === 'pending' ||
+    regData?.status === 'pending' ||
+    user.status === 'pending' ||
+    !directToken;
+
+  if (isPending) {
+    return {
+      pendingApproval: true,
+      status: String(regData?.status || regJson?.status || 'pending'),
+      message:
+        regData?.message ||
+        'Account submitted for Admin verification. You can sign in once approved by an Administrator.',
+      user,
+    };
   }
 
-  const loginIdent =
+  const session: AuthSession = {token: directToken, user};
+  await saveAuthSession(session);
+  const savedIdent =
     params.username?.trim() ||
     params.workerId?.trim() ||
     params.email?.trim() ||
     params.phone?.trim() ||
-    regData?.worker_id ||
-    regData?.username ||
-    regData?.email ||
-    regData?.phone;
-
-  const session = await loginWithIdentifier(loginIdent, params.password, params.role);
-  if (params.specialization?.trim() && !session.user.specialization) {
-    session.user.specialization = params.specialization.trim();
-    await saveAuthSession(session);
+    user.workerId ||
+    user.email ||
+    '';
+  if (savedIdent) {
+    await saveLoginCredentials(user.role, savedIdent, params.password);
   }
-  return session;
+  return {
+    pendingApproval: false,
+    status: 'active',
+    session,
+    user,
+  };
 }
 
 export async function fetchCurrentProfile(): Promise<UserProfile | null> {
@@ -327,17 +366,20 @@ export async function registerWithServer(
   try {
     const mappedRole: AppRole =
       role === 'asha' || role === 'patient' ? 'field_worker' : role;
-    const session = await registerUserV4({
+    const res = await registerUserV4({
       phone,
       password,
       fullName,
       role: mappedRole,
     });
+    if (!res.session || res.pendingApproval) {
+      return null;
+    }
     return {
-      token: session.token,
+      token: res.session.token,
       refresh_token: '',
-      user_id: session.user.userId,
-      role: session.user.role,
+      user_id: res.session.user.userId,
+      role: res.session.user.role,
     };
   } catch {
     return null;

@@ -70,13 +70,14 @@ def test_seeded_demo_accounts_and_multi_identifier_login(client):
         ("cho001", "cho123", "field_worker"),
         ("9831000004", "mod123", "moderator"),
         ("admin@hospital.in", "admin123", "admin"),
+        ("patient@demo.in", "patient123", "patient"),
     ):
         r = client.post("/api/v1/auth/login", json={"identifier": ident, "password": pw})
         assert r.status_code == 200, r.text
         assert r.json()["data"]["role"] == expected_role
 
 
-def test_register_all_4_roles_and_me(client):
+def test_register_all_roles_requires_admin_verification(client):
     reg_doc = client.post(
         "/api/v1/auth/register",
         json={
@@ -90,11 +91,18 @@ def test_register_all_4_roles_and_me(client):
         },
     )
     assert reg_doc.status_code == 201, reg_doc.text
-    doc_tok = reg_doc.json()["data"]["token"]
+    doc_data = reg_doc.json()["data"]
+    assert doc_data["pending_approval"] is True
+    assert doc_data["user"]["status"] == "pending"
+    assert "token" not in doc_data
 
-    me = client.get("/api/v1/auth/me", headers=_auth(doc_tok))
-    assert me.status_code == 200
-    assert me.json()["data"]["email"] == "amit.sen@kgp.edu"
+    # Pending account cannot login yet
+    pending_login = client.post(
+        "/api/v1/auth/login",
+        json={"identifier": "dramit", "password": "pass1234"},
+    )
+    assert pending_login.status_code == 403
+    assert "pending" in pending_login.json()["detail"].lower()
 
     dup = client.post(
         "/api/v1/auth/register",
@@ -102,13 +110,57 @@ def test_register_all_4_roles_and_me(client):
     )
     assert dup.status_code == 400
 
+    created_ids = [doc_data["user_id"]]
     for payload in (
         {"full_name": "Kalyani Devi", "role": "field_worker", "worker_type": "CHO", "phone": "9000000002", "district": "Jhargram", "password": "pass1234"},
         {"full_name": "Mod Suman", "role": "moderator", "username": "modsuman", "password": "pass1234"},
         {"full_name": "Admin Raj", "role": "admin", "email": "raj@admin.in", "password": "pass1234"},
+        {"full_name": "Patient Rita", "role": "patient", "phone": "9000000009", "password": "pass1234"},
+        {"full_name": "Reject Test", "role": "doctor", "email": "rejectme@kgp.edu", "password": "pass1234"},
     ):
         r = client.post("/api/v1/auth/register", json=payload)
         assert r.status_code == 201, r.text
+        assert r.json()["data"]["pending_approval"] is True
+        created_ids.append(r.json()["data"]["user_id"])
+
+    # Admin verifies pending accounts
+    adm_tok = client.post(
+        "/api/v1/auth/login",
+        json={"identifier": "admin@hospital.in", "password": "admin123"},
+    ).json()["data"]["token"]
+
+    pending_list = client.get("/api/v1/admin/users?status=pending", headers=_auth(adm_tok))
+    assert pending_list.status_code == 200
+    assert len(pending_list.json()["users"]) >= 6
+
+    # Approve doctor, field_worker, moderator, admin, patient; reject rejectme@kgp.edu
+    for uid in created_ids[:5]:
+        app_res = client.post(f"/api/v1/admin/users/{uid}/approve", headers=_auth(adm_tok))
+        assert app_res.status_code == 200
+        assert app_res.json()["user"]["status"] == "active"
+
+    rej_res = client.post(f"/api/v1/admin/users/{created_ids[5]}/reject", headers=_auth(adm_tok))
+    assert rej_res.status_code == 200
+    assert rej_res.json()["user"]["status"] == "rejected"
+
+    # Approved doctor & patient can now login and Admin can access all role queues
+    doc_login = client.post("/api/v1/auth/login", json={"identifier": "dramit", "password": "pass1234"})
+    assert doc_login.status_code == 200, doc_login.text
+    doc_tok = doc_login.json()["data"]["token"]
+    me = client.get("/api/v1/auth/me", headers=_auth(doc_tok))
+    assert me.status_code == 200
+    assert me.json()["data"]["email"] == "amit.sen@kgp.edu"
+
+    pat_login = client.post("/api/v1/auth/login", json={"identifier": "9000000009", "password": "pass1234"})
+    assert pat_login.status_code == 200, pat_login.text
+
+    # Admin bypasses role checks across all portals
+    assert client.get("/api/v1/doctor/queue", headers=_auth(adm_tok)).status_code == 200
+    assert client.get("/api/v1/moderator/queue", headers=_auth(adm_tok)).status_code == 200
+
+    # Rejected account cannot login
+    rej_login = client.post("/api/v1/auth/login", json={"identifier": "rejectme@kgp.edu", "password": "pass1234"})
+    assert rej_login.status_code == 403
 
 
 def test_doctor_direct_workflow_and_payments(client):

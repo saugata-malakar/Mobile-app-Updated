@@ -23,12 +23,18 @@ export default function Layout({ doctor, children }) {
 
   if (currentRole === 'admin' || currentRole === 'hospital_admin') {
     roleTitle = 'System Administrator';
-    roleBadge = 'Full Platform Oversight';
+    roleBadge = 'Full Platform Oversight & Verification';
     navItems = [
       { to: '/admin-overview', label: 'Admin Control Center', icon: '⚙️' },
-      { to: '/admin/users', label: 'User Management', icon: '👥' },
+      { to: '/admin/users', label: 'Verify & Manage Users', icon: '👥' },
       { to: '/admin/submissions', label: 'Submissions & Photos', icon: '🖼️' },
       { to: '/admin/payments', label: 'Payments & ₹ Ledger', icon: '💰' },
+      { to: '/', label: 'Doctor Triage Hub', icon: '⚡' },
+      { to: '/doctor/collect', label: 'Doctor Record Upload', icon: '🩺' },
+      { to: '/doctor/validate-queue', label: 'Doctor Validation Queue', icon: '✅' },
+      { to: '/moderator', label: 'Moderator QA Queue', icon: '🔍' },
+      { to: '/field-collector', label: 'ASHA / ICDS / CHO Portal', icon: '📋' },
+      { to: '/patient-portal', label: 'Patient Healing View', icon: '🩹' },
       { to: '/dpdp', label: 'DPDP Audit Logs', icon: '🛡️' },
       { to: '/asha', label: 'Field Workforce Metrics', icon: '👩‍⚕️' },
       { to: '/settings', label: 'Settings', icon: '🔧' },

@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminUsers, updateAdminUser } from '../services/api';
+import {
+  approveAdminUser,
+  fetchAdminUsers,
+  rejectAdminUser,
+  updateAdminUser,
+} from '../services/api';
 import { formatDateTime, normalizeArray } from '../utils/workflowUtils';
 import { RoleBadge, StatusBadge } from '../components/WorkflowShared';
 
@@ -9,23 +14,33 @@ const ROLE_FILTERS = [
   { value: 'field_worker', label: 'ASHA / ICDS / CHO' },
   { value: 'moderator', label: 'Moderators' },
   { value: 'admin', label: 'Admins' },
+  { value: 'patient', label: 'Patients' },
+];
+
+const STATUS_FILTERS = [
+  { value: 'ALL', label: 'All Statuses' },
+  { value: 'pending', label: '⏳ Pending Verification' },
+  { value: 'active', label: '✓ Active / Verified' },
+  { value: 'rejected', label: '✕ Rejected' },
+  { value: 'suspended', label: '⛔ Suspended' },
 ];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [feedback, setFeedback] = useState('');
 
-  const loadUsers = async (r = roleFilter, s = search) => {
+  const loadUsers = async (r = roleFilter, s = search, st = statusFilter) => {
     setLoading(true);
     try {
-      const res = await fetchAdminUsers(r, s);
+      const res = await fetchAdminUsers(r, s, st);
       setUsers(normalizeArray(res, ['users', 'items']));
     } catch (err) {
-      setFeedback(err?.response?.data?.detail || 'Could not load users from backend.');
+      setFeedback(err?.response?.data?.detail || err?.message || 'Could not load users from backend.');
     } finally {
       setLoading(false);
     }
@@ -33,22 +48,50 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchAdminUsers(roleFilter, search)
+    fetchAdminUsers(roleFilter, search, statusFilter)
       .then((res) => {
         if (!cancelled) setUsers(normalizeArray(res, ['users', 'items']));
       })
       .catch((err) => {
-        if (!cancelled) setFeedback(err?.response?.data?.detail || 'Could not load users from backend.');
+        if (!cancelled) setFeedback(err?.response?.data?.detail || err?.message || 'Could not load users from backend.');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleFilter]);
+  }, [roleFilter, statusFilter]);
+
+  const handleApprove = async (user) => {
+    setBusyId(user.user_id);
+    setFeedback('');
+    try {
+      await approveAdminUser(user.user_id);
+      setUsers((prev) => prev.map((u) => (u.user_id === user.user_id ? { ...u, status: 'active' } : u)));
+      setFeedback(`✓ Verified & approved ${user.full_name || user.user_id} (${user.role}). They can now sign in.`);
+    } catch (err) {
+      setFeedback(err?.response?.data?.detail || err?.message || 'Failed to approve user.');
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const handleReject = async (user) => {
+    setBusyId(user.user_id);
+    setFeedback('');
+    try {
+      await rejectAdminUser(user.user_id);
+      setUsers((prev) => prev.map((u) => (u.user_id === user.user_id ? { ...u, status: 'rejected' } : u)));
+      setFeedback(`✕ Rejected registration for ${user.full_name || user.user_id}.`);
+    } catch (err) {
+      setFeedback(err?.response?.data?.detail || err?.message || 'Failed to reject user.');
+    } finally {
+      setBusyId('');
+    }
+  };
 
   const handleToggleStatus = async (user) => {
-    const nextStatus = user.status === 'suspended' ? 'active' : 'suspended';
+    const nextStatus = user.status === 'active' ? 'suspended' : 'active';
     setBusyId(user.user_id);
     setFeedback('');
     try {
@@ -56,7 +99,7 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => (u.user_id === user.user_id ? { ...u, status: nextStatus } : u)));
       setFeedback(`Updated ${user.full_name || user.user_id} status to ${nextStatus}.`);
     } catch (err) {
-      setFeedback(err?.response?.data?.detail || 'Failed to update user status.');
+      setFeedback(err?.response?.data?.detail || err?.message || 'Failed to update user status.');
     } finally {
       setBusyId('');
     }
@@ -71,7 +114,7 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => (u.user_id === user.user_id ? { ...u, role: nextRole } : u)));
       setFeedback(`Changed ${user.full_name || user.user_id} role to ${nextRole}.`);
     } catch (err) {
-      setFeedback(err?.response?.data?.detail || 'Failed to change user role.');
+      setFeedback(err?.response?.data?.detail || err?.message || 'Failed to change user role.');
     } finally {
       setBusyId('');
     }
@@ -79,17 +122,21 @@ export default function AdminUsersPage() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadUsers(roleFilter, search);
+    loadUsers(roleFilter, search, statusFilter);
   };
+
+  const pendingCount = users.filter((u) => u.status === 'pending').length;
 
   return (
     <div className="space-y-5 max-w-7xl font-sans">
       <div className="p-5 rounded-2xl bg-[#111C38] border border-[#23355E] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">Admin · Identity & Access</span>
-          <h2 className="text-xl font-bold text-white mt-0.5">User Management (4 Roles)</h2>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">Admin · Identity & Verification Gate</span>
+          <h2 className="text-xl font-bold text-white mt-0.5">
+            User Verification & Role Management
+          </h2>
           <p className="text-xs text-slate-400">
-            Search, filter, activate/suspend accounts, or reassign roles across Doctors, ASHA/ICDS/CHO, Moderators, and Admins.
+            Every newly registered account (Doctor, ASHA/ICDS/CHO, Moderator, Admin, Patient) must be verified by Admin before sign-in.
           </p>
         </div>
 
@@ -110,22 +157,56 @@ export default function AdminUsersPage() {
         </form>
       </div>
 
-      {/* Role Filter Pills */}
-      <div className="flex flex-wrap gap-2">
-        {ROLE_FILTERS.map((rf) => (
+      {pendingCount > 0 && statusFilter !== 'pending' && (
+        <div className="p-3.5 rounded-xl bg-amber-950/50 border border-amber-600/60 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-amber-200 font-semibold">
+            ⏳ <strong>{pendingCount} account(s)</strong> awaiting Admin verification!
+          </p>
           <button
-            key={rf.value}
             type="button"
-            onClick={() => setRoleFilter(rf.value)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-              roleFilter === rf.value
-                ? 'bg-blue-600 text-white border-blue-500'
-                : 'bg-[#111C38] text-slate-300 border-[#23355E] hover:bg-[#1A284D]'
-            }`}
+            onClick={() => setStatusFilter('pending')}
+            className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold"
           >
-            {rf.label}
+            Show Pending Only
           </button>
-        ))}
+        </div>
+      )}
+
+      {/* Status & Role Filters */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((sf) => (
+            <button
+              key={sf.value}
+              type="button"
+              onClick={() => setStatusFilter(sf.value)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                statusFilter === sf.value
+                  ? 'bg-amber-600 text-white border-amber-500'
+                  : 'bg-[#111C38] text-slate-300 border-[#23355E] hover:bg-[#1A284D]'
+              }`}
+            >
+              {sf.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {ROLE_FILTERS.map((rf) => (
+            <button
+              key={rf.value}
+              type="button"
+              onClick={() => setRoleFilter(rf.value)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                roleFilter === rf.value
+                  ? 'bg-blue-600 text-white border-blue-500'
+                  : 'bg-[#111C38] text-slate-300 border-[#23355E] hover:bg-[#1A284D]'
+              }`}
+            >
+              {rf.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {feedback && (
@@ -151,61 +232,92 @@ export default function AdminUsersPage() {
                   <th className="py-3 px-4">District / Spec.</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Change Role</th>
-                  <th className="py-3 px-4 text-right">Action</th>
+                  <th className="py-3 px-4 text-right">Admin Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1A284D]">
-                {users.map((u) => (
-                  <tr key={u.user_id} className="hover:bg-[#162347]/50">
-                    <td className="py-3 px-4">
-                      <p className="font-bold text-white">{u.full_name || u.username || 'Unnamed'}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        {u.worker_id || u.username || u.user_id}
-                      </p>
-                      <p className="text-[10px] text-slate-500">{formatDateTime(u.created_at)}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-slate-200">{u.email || '—'}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">{u.phone || '—'}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <RoleBadge role={u.role} workerType={u.worker_type} />
-                    </td>
-                    <td className="py-3 px-4 text-slate-300">
-                      {u.district || u.specialization || '—'}
-                    </td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={u.status || 'active'} />
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={u.role}
-                        disabled={busyId === u.user_id}
-                        onChange={(e) => handleRoleChange(u, e.target.value)}
-                        className="px-2 py-1 rounded bg-[#0C152E] border border-[#253966] text-xs text-white"
-                      >
-                        <option value="doctor">doctor</option>
-                        <option value="field_worker">field_worker</option>
-                        <option value="moderator">moderator</option>
-                        <option value="admin">admin</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        disabled={busyId === u.user_id}
-                        onClick={() => handleToggleStatus(u)}
-                        className={`px-3 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
-                          u.status === 'suspended'
-                            ? 'bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border-emerald-700/60'
-                            : 'bg-rose-950/60 hover:bg-rose-900 text-rose-300 border-rose-700/60'
-                        }`}
-                      >
-                        {u.status === 'suspended' ? 'Activate' : 'Suspend'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {users.map((u) => {
+                  const isPending = u.status === 'pending';
+                  return (
+                    <tr
+                      key={u.user_id}
+                      className={`hover:bg-[#162347]/50 ${isPending ? 'bg-amber-950/20' : ''}`}
+                    >
+                      <td className="py-3 px-4">
+                        <p className="font-bold text-white">{u.full_name || u.username || 'Unnamed'}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {u.worker_id || u.username || u.user_id}
+                        </p>
+                        <p className="text-[10px] text-slate-500">{formatDateTime(u.created_at)}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="text-slate-200">{u.email || '—'}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">{u.phone || '—'}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <RoleBadge role={u.role} workerType={u.worker_type} />
+                      </td>
+                      <td className="py-3 px-4 text-slate-300">
+                        {u.district || u.specialization || '—'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={u.status || 'active'} />
+                      </td>
+                      <td className="py-3 px-4">
+                        <select
+                          value={u.role}
+                          disabled={busyId === u.user_id}
+                          onChange={(e) => handleRoleChange(u, e.target.value)}
+                          className="px-2 py-1 rounded bg-[#0C152E] border border-[#253966] text-xs text-white"
+                        >
+                          <option value="doctor">doctor</option>
+                          <option value="field_worker">field_worker</option>
+                          <option value="moderator">moderator</option>
+                          <option value="admin">admin</option>
+                          <option value="patient">patient</option>
+                        </select>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {isPending && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={busyId === u.user_id}
+                                onClick={() => handleApprove(u)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold"
+                              >
+                                ✓ Verify & Approve
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === u.user_id}
+                                onClick={() => handleReject(u)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-[11px] font-bold"
+                              >
+                                ✕ Reject
+                              </button>
+                            </>
+                          )}
+                          {!isPending && (
+                            <button
+                              type="button"
+                              disabled={busyId === u.user_id}
+                              onClick={() => handleToggleStatus(u)}
+                              className={`px-3 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                                u.status === 'active'
+                                  ? 'bg-rose-950/60 hover:bg-rose-900 text-rose-300 border-rose-700/60'
+                                  : 'bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border-emerald-700/60'
+                              }`}
+                            >
+                              {u.status === 'active' ? 'Suspend' : 'Activate'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

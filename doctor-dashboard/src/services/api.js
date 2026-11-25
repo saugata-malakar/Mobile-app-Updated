@@ -251,7 +251,10 @@ export async function registerUser(payload) {
     () => api.post('/api/v1/auth/register', payload),
     () => sandboxRegister(payload)
   );
-  persistUserSession(data);
+  // Only store an active session if the backend/sandbox issued a token (approved)
+  if (data?.token && !data?.pending_approval && data?.user?.status !== 'pending') {
+    persistUserSession(data);
+  }
   return data;
 }
 
@@ -427,13 +430,14 @@ export async function fetchAdminStats() {
   );
 }
 
-export async function fetchAdminUsers(role, search) {
+export async function fetchAdminUsers(role, search, status) {
   const params = {};
   if (role && role !== 'ALL') params.role = role;
+  if (status && status !== 'ALL') params.status = status;
   if (search) params.search = search;
   return withFallback(
     () => api.get('/api/v1/admin/users', { params }),
-    () => sandboxAdminUsers(role, search)
+    () => sandboxAdminUsers(role, search, status)
   );
 }
 
@@ -441,6 +445,20 @@ export async function updateAdminUser(userId, payload) {
   return withFallback(
     () => api.patch(`/api/v1/admin/users/${userId}`, payload),
     () => sandboxAdminUpdateUser(userId, payload)
+  );
+}
+
+export async function approveAdminUser(userId) {
+  return withFallback(
+    () => api.post(`/api/v1/admin/users/${userId}/approve`),
+    () => sandboxAdminUpdateUser(userId, { status: 'active' })
+  );
+}
+
+export async function rejectAdminUser(userId) {
+  return withFallback(
+    () => api.post(`/api/v1/admin/users/${userId}/reject`),
+    () => sandboxAdminUpdateUser(userId, { status: 'rejected' })
   );
 }
 

@@ -97,6 +97,19 @@ const SEEDED_USERS = [
     status: 'active',
     created_at: '2026-10-01T09:25:00.000Z',
   },
+  {
+    user_id: 'PAT_KGP_01',
+    email: 'patient@demo.in',
+    phone: '9831000007',
+    username: 'patient',
+    worker_id: 'PAT_KGP_01',
+    password: 'patient123',
+    full_name: 'Ramesh Chandra Sen',
+    role: 'patient',
+    district: 'Paschim Medinipur',
+    status: 'active',
+    created_at: '2026-10-01T09:30:00.000Z',
+  },
 ];
 
 function readJson(key, fallback) {
@@ -202,7 +215,7 @@ export function sandboxRegister(payload) {
 
   const role = (payload.role || 'field_worker').toLowerCase();
   const prefix =
-    role === 'doctor' ? 'DOC' : role === 'moderator' ? 'MOD' : role === 'admin' ? 'ADM' : 'FW';
+    role === 'doctor' ? 'DOC' : role === 'moderator' ? 'MOD' : role === 'admin' ? 'ADM' : role === 'patient' ? 'PAT' : 'FW';
   const newUser = {
     user_id: uid(prefix),
     email: payload.email?.trim() || '',
@@ -215,7 +228,7 @@ export function sandboxRegister(payload) {
     worker_type: role === 'field_worker' ? payload.worker_type || 'ASHA' : '',
     district: payload.district?.trim() || 'Paschim Medinipur',
     specialization: payload.specialization?.trim() || '',
-    status: 'active',
+    status: 'pending',
     created_at: new Date().toISOString(),
   };
 
@@ -224,12 +237,13 @@ export function sandboxRegister(payload) {
 
   const safe = sanitizeUser(newUser);
   return {
-    token: `sandbox_jwt_${newUser.user_id}`,
-    refresh_token: `sandbox_ref_${newUser.user_id}`,
+    pending_approval: true,
+    status: 'pending',
     role: safe.role,
     user_id: safe.user_id,
     name: safe.full_name,
     user: safe,
+    message: 'Registration submitted. An Administrator must verify and approve your account before login.',
     sandbox_mode: true,
   };
 }
@@ -247,6 +261,12 @@ export function sandboxLogin(identifier, password) {
 
   if (!match || match.password !== password) {
     throw new Error('Invalid identifier or password.');
+  }
+  if (match.status === 'pending') {
+    throw new Error('Account is pending Admin verification. An Administrator must approve your account before you can sign in.');
+  }
+  if (match.status === 'rejected') {
+    throw new Error('Your account registration was rejected by the Administrator.');
   }
   if (match.status === 'suspended') {
     throw new Error('Account is suspended by Administrator.');
@@ -500,6 +520,7 @@ export function sandboxAdminStats() {
   return {
     total_users: users.length,
     users_by_role,
+    pending_users: users.filter((u) => u.status === 'pending').length,
     total_submissions: subs.length,
     today_submissions,
     pending_moderator: subs_by_status.ai_reviewed || 0,
@@ -512,10 +533,13 @@ export function sandboxAdminStats() {
   };
 }
 
-export function sandboxAdminUsers(role, search) {
+export function sandboxAdminUsers(role, search, statusFilter) {
   let list = getUsers().map(sanitizeUser);
   if (role && role !== 'ALL') {
     list = list.filter((u) => String(u.role).toLowerCase() === String(role).toLowerCase());
+  }
+  if (statusFilter && statusFilter !== 'ALL') {
+    list = list.filter((u) => String(u.status).toLowerCase() === String(statusFilter).toLowerCase());
   }
   if (search) {
     const q = search.toLowerCase();
@@ -524,6 +548,7 @@ export function sandboxAdminUsers(role, search) {
         .some((v) => String(v || '').toLowerCase().includes(q))
     );
   }
+  list.sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1));
   return { users: list };
 }
 

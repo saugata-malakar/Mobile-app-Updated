@@ -15,8 +15,9 @@ import {
 } from '../components/WorkflowShared';
 
 const DEFAULT_STATS = {
-  total_users: 6,
-  users_by_role: { doctor: 1, field_worker: 3, moderator: 1, admin: 1 },
+  total_users: 7,
+  pending_users: 0,
+  users_by_role: { doctor: 1, field_worker: 3, moderator: 1, admin: 1, patient: 1 },
   total_submissions: 0,
   today_submissions: 0,
   pending_ai: 0,
@@ -145,6 +146,25 @@ export default function AdminDashboard() {
       {error && (
         <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-700/50 text-amber-200 text-xs">
           ⚠ {error}
+        </div>
+      )}
+
+      {(stats.pending_users || 0) > 0 && (
+        <div className="p-4 rounded-xl bg-amber-950/50 border border-amber-600/60 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
+              ⏳ Pending Account Verifications ({stats.pending_users})
+            </p>
+            <p className="text-xs text-amber-100 mt-0.5">
+              New registration(s) waiting for Admin verification before login is permitted.
+            </p>
+          </div>
+          <Link
+            to="/admin/users"
+            className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow"
+          >
+            Verify Accounts Now →
+          </Link>
         </div>
       )}
 
